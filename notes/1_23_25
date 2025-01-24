@@ -1,0 +1,182 @@
+Link Layer
+- physical layer
+- lowest of 4 in the TCP/IP model
+- lowest of 7 in OSI model
+- lowest cost connection in the models
+
+link = medium + adapter
+
+physical medium vs network adapter
+- physical medium
+	- fiber optic cables
+	- coaxial cables
+	- twisted-pair copper (Cat 5e)
+		- RJ45
+	- radio spectrum
+- network adapter
+	- fiber optic adapter
+	- coax adapter
+	- Ethernet adapter
+	- wi-fi adapter
+
+adaptor communicating
+- sending side
+	- encapsulate packet in frame
+	- adds error checking bits, flow control, etc
+- receiving side
+	- checks for errors, flow control, etc
+	- decapsulates datagram, hands to receiving node
+
+sending node -[packet]->adapter -[frame]-> {link layer protocol} -[frame]-> adapter -[packet]-> receiving node
+
+
+link layer services
+- encoding
+	- represent 0s and 1s
+- framing
+	- encapsulate packet into frame (header/trailer)
+- error detection
+	- receiver detects errors (checksums)
+- error correction
+	- receiver optionally corrects errors
+- flow control
+	- pacing between sending and receiving nodes
+
+broadcast links: shared media
+- shared wire e.g. ethernet
+- shared wireless e.g. wavelan
+- satellite
+- cocktail party (lol)
+
+addresses
+- medium access control (MAC) address
+	- identify sending and receiving adapter
+	- unique ID for each network adapter
+	- numerical address used within a link
+	- unique, hard-coded in the adapter when built
+	- flat namespace of 48 bits
+		- each manufacturer assigned a set of leading bits
+		- each device given unique following bits
+	- how to ensure global uniqueness? hierarchical allocation
+		- blocks: assigned to vendor/manufacturers
+		- adapters: assigned by vendor from block
+	- broadcast address: (i.e. FF:FF:FF:FF:FF:FF)
+		- send frame to all adapters
+
+promiscuous mode
+- normal adapter mode
+	- receive frames sent to local MAC address and broadcast address
+	- ignore frames sent to other MAC addresses
+- promiscuous mode
+	- receive everything regardless of destination MAC
+	- useful for packet sniffing and network monitoring (e.g. wireshark, tcpdump)
+
+why not use just IP addresses
+- links can support any network protocol
+	- not just IP (e.g., IPX, Appletalk, X.25, etc)
+	- different addresses on different kinds of links
+- adapter may move to a new location
+	- IP address has notion of network
+	- cannot simply assign a static IP address to a device
+- must identify adapter during bootstrap
+	- need to talk to the adapter to assign it IP address
+
+acquiring an IP address
+- dynamic host configuration protocol (DHCP)
+	- broadcast " I need an IP address"
+	- response "you can have address x.x.x.x"
+- address resolution protocol (ARP)
+	- broadcast "who has IP address x.x.x.x"
+	- response "xx:xx:xx:xx:xx:xx has x.x.x.x"
+
+sharing the medium:
+
+issue of shared medium
+- single shared broadcast channel
+	- avoid having multiple nodes speaking at once
+	- collisions lead to garbled data
+
+medium access/multi-access protocol
+- divide channel into pieces (in frequency vs in time)
+	- contention based protocols (Distributed)
+		- ALOHA
+		- CSMA
+	- contention-free protocols (centralized)
+		- FDMA (Frequency divided)
+		- TDMA (time divided)
+
+centralized multi-access protocol
+- master controller
+- divide channel into pieces (in frequency vs in time)
+
+distributed multi-access protocol
+- take turns (avoid collision)
+	- do not transmit without token
+	- transmit for < some max time/length
+	- pass token to right
+- or not
+	- let collisions happen
+	- detect and recover from them
+
+
+carrier sense multiple access (CSMA)
+- listen for other senders then transmit data
+- collisions can still occur
+	- propagation delay
+	- wasted transmission
+
+CSMA/CD Collision Detection
+- detect collision
+	- abort transmission
+	- jam the link
+- etc
+
+
+ethernet
+- dominant wired LAN technology
+- first widely used LAN technology
+- kept up with speed race: 10 Mbps - 100 Gbps
+
+old days of CMSA/CD in ethernet
+- carrier sense: wait for link to be idle
+	- channel idle: start transmitting
+	- channel busy: wait until idle
+- collision detection: listen while transmitting
+	- no collision: transmission complete
+	- collision: abort transmission, send jamming signal
+		- notifies other nodes that collision happened
+- random access: exponential back-off
+	- after collision, wait random time before transmitting again
+	- after nth collision, choose random K from {0,...,2^n-1} (n capped at 10)
+	- wait for K*512 bit times before trying again
+
+limitation of ethernet length
+- latency depends on physical length of link
+	- time to propagate frame from one end to the other
+- A sends frame at time t
+	- B sees an idle line at time just before t+d
+	- B transmits packet
+- B detects collision, sends jamming signal
+	- A doesn't see collision until t+2d
+- A needs to wait until 2d to detect collision with B
+	- A needs to keep transmitting during this period
+	- check for collisions
+- etc
+
+
+jamming and backoff
+- jamming signal
+	- not terminate transmission immediately
+		- collision enforcement
+(see slide 33)
+
+what about now?
+- shared medium half duplex mode
+	- modern network
+		- full duplex mode (only 2)
+		- no need for CSMA/CD
+- CSMA idle
+	- send immediately
+- collision
+	- stop early (improve efficiency)
+

@@ -1,0 +1,112 @@
+what is a computer network?
+- interconnected computers able to exchange information or resources
+
+direct connectivity
+- every node connected to every other node
+- doesn't scale well
+- resource/space intensive
+
+internet
+- inter-connection
+- indirect connectivity: single network
+- use switches to connect computer nodes
+- scales better
+- how does switch know where to direct data
+
+interconnecting multiple subnetworks 
+- router connects switches from different subnetworks
+- does each device need to know all devices in each subnetworks
+
+autonomous systems
+- one or more subnets controlled by a single entity
+- ISP
+- cloud (AWS)
+- Enterprise (JHU)
+
+
+the Internet:
+
+- ARPANET: foundation of the Internet
+  - packet switched WAN (not circuit switched)
+  - distributed control - separate entities controlled different parts
+  - used TCP/IP protocol
+- Internet exploded out of the lab
+  - currently ~80 k autonomous systems
+  - no single entity knows everything
+
+core concepts
+- end-to-end principle
+- abstraction: layering and protocols
+- encapsulation
+- socket programming
+
+end-to-end principle
+- keep middle as simple as possible
+- push intelligence to the end
+- result: rapid innovation at the edge uses reliable and consistent middle
+
+abstractions: layering protocols
+- each layer provides consistent interface to layer above
+  - implementation independent
+- layer depends only on layer immediately beneath it
+- layer provides services only to layer directly above it
+
+mapping OSI model to the Internet
+- OSI
+  - Application
+  - Presentation
+  - Session
+  - Transport
+  - Network
+  - Data link
+  - Physical
+- Internet
+  - App
+  - Transport
+  - Network
+  - Link
+
+
+Internet Protocols
+- app
+  - ftp, http, dns, nfs
+- transport
+  - udp
+  - tcp
+- network
+  - IP
+- link L2
+  - ethernet
+  - wifi
+  - 5G
+narrow waist facilitates network interconnectivity
+
+Internet also referred to as TCP/IP architecture
+
+e.g. web browsing
+- http GET request (app)
+- connection with remote process (transport)
+- communication source and destination (network)
+- sends data to device in subnet (link)
+
+encapsulating layers
+- each protocol has header and payload
+- higher layers encapsulated in lower layers
+  - transmitting: push header, hand to lower layer
+  - receiving: pop header, hand to higher layer
+
+end-hosts vs routers
+[slide 37]
+
+
+socket comm
+- OS provides socket API for developers
+  - eases app development
+- IP address: uniquely identifies network interface on a host
+  - IPv4 - 32 bit addr (128.220.13.64)
+  - IPv6 - 128 bit addr (2001:4860:4860:0:0:0:0:8888)
+- port number: uniquely identifies socket on a host
+  - 16 bits
+  - sockets for TCP and UDP can use same number
+  - processes communicate via sockets
+

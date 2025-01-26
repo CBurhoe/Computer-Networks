@@ -11,6 +11,7 @@
 
 #define QUEUE_LENGTH 10
 #define RECV_BUFFER_SIZE 2048
+#define SERVER_IP "127.0.0.1"
 
 /* TODO: server()
  * Open socket and wait for client to connect
@@ -18,6 +19,7 @@
  * Return 0 on success, non-zero on failure
 */
 int server(char *server_port) {
+  int status;
   struct sockaddr_storage their_addr;
   socklen_t addr_size;
   struct addrinfo hints, *res;
@@ -28,9 +30,12 @@ int server(char *server_port) {
   memset(&hints, 0, sizeof hints);
   hints.ai_family = AF_UNSPEC;
   hints.ai_socktype = SOCK_STREAM;
-  hints.ai_flags = AI_PASSIVE;
+  // hints.ai_flags = AI_PASSIVE;
 
-  getaddrinfo(NULL, server_port, &hints, &res);
+  if ((status = getaddrinfo(SERVER_IP, server_port, &hints, &res)) != 0) {
+    fprintf(stderr, "getaddrinfo error: %s\n", gai_strerror(status));
+    exit(1);
+  }
 
   sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
   bind(sockfd, res->ai_addr, res->ai_addrlen);

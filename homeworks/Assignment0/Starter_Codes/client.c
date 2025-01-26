@@ -17,7 +17,20 @@
  * Return 0 on success, non-zero on failure
 */
 int client(char *server_ip, char *server_port) {
-    return 0;
+  int status;
+  struct addrinfo hints;
+  struct addrinfo *res;
+
+  memset(&hints, 0, sizeof hints);
+  hints.ai_family = AF_UNSPEC;
+  hints.ai_socktype = SOCK_STREAM;
+
+  if ((status = getaddrinfo(server_ip, server_port, &hints, &res)) != 0) {
+    fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(status));
+    exit(2);
+  }
+
+  return 0;
 }
 
 /*

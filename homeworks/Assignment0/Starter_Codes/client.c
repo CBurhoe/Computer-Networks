@@ -20,6 +20,7 @@ int client(char *server_ip, char *server_port) {
   int status;
   struct addrinfo hints;
   struct addrinfo *res;
+  int sockfd;
 
   memset(&hints, 0, sizeof hints);
   hints.ai_family = AF_UNSPEC;
@@ -29,6 +30,10 @@ int client(char *server_ip, char *server_port) {
     fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(status));
     exit(2);
   }
+
+  sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+
+  connect(sockfd, res->ai_addr, res->ai_addrlen);
 
   return 0;
 }

@@ -32,7 +32,7 @@ int client(char *server_ip, char *server_port) {
   }
 
   sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-
+  // TODO: error handling for socket? and connect (hint: check return value and store in status)
   connect(sockfd, res->ai_addr, res->ai_addrlen);
 
   return 0;

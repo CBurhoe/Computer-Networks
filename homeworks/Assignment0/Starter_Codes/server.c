@@ -50,9 +50,9 @@ int server(char *server_port) {
     }
 
     // Receive the client input
-    char buff[RECV_BUFFER_SIZE + 1];
+    char buff[RECV_BUFFER_SIZE];
     int recv_bytes;
-    recv_bytes = recv(new_fd, buff, RECV_BUFFER_SIZE, 0);
+    recv_bytes = recv(new_fd, buff, RECV_BUFFER_SIZE - 1, 0);
     if (recv_bytes == -1) {
       perror("recv");
       continue;
@@ -62,9 +62,6 @@ int server(char *server_port) {
     fflush(stdout);
 
   }
-
-  //TODO: handle communication on new_fd
-
   return 0;
 }
 

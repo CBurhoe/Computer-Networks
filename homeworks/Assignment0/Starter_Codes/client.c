@@ -17,23 +17,26 @@
  * Return 0 on success, non-zero on failure
 */
 int client(char *server_ip, char *server_port) {
-  int status;
-  struct addrinfo hints;
-  struct addrinfo *res;
-  int sockfd;
+  int sockfd, numbytes;
+  char buff[SEND_BUFFER_SIZE];
+  struct addrinfo hints, *servinfo, *p;
+  int rv;
+
 
   memset(&hints, 0, sizeof hints);
   hints.ai_family = AF_UNSPEC;
   hints.ai_socktype = SOCK_STREAM;
 
-  if ((status = getaddrinfo(server_ip, server_port, &hints, &res)) != 0) {
-    fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(status));
-    exit(2);
+  if ((rv = getaddrinfo(server_ip, server_port, &hints, &servinfo)) != 0) {
+    fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
+    exit(1);
   }
 
-  sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+  sockfd = socket(servinfo->ai_family, servinfo->ai_socktype, servinfo->ai_protocol);
   // TODO: error handling for socket? and connect (hint: check return value and store in status)
-  connect(sockfd, res->ai_addr, res->ai_addrlen);
+  connect(sockfd, servinfo->ai_addr, servinfo->ai_addrlen);
+
+
 
   return 0;
 }

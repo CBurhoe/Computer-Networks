@@ -41,8 +41,27 @@ int server(char *server_port) {
   bind(sockfd, res->ai_addr, res->ai_addrlen);
   listen(sockfd, QUEUE_LENGTH);
 
-  addr_size = sizeof their_addr;
-  new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &addr_size);
+  while(1) {
+    addr_size = sizeof their_addr;
+    new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &addr_size);
+  	if (new_fd == -1) {
+      perror("accept");
+      continue;
+    }
+
+    // Receive the client input
+    char buff[RECV_BUFFER_SIZE + 1];
+    int recv_bytes;
+    recv_bytes = recv(new_fd, buff, RECV_BUFFER_SIZE, 0);
+    if (recv_bytes == -1) {
+      perror("recv");
+      continue;
+    }
+    buff[recv_bytes] = '\0';
+    printf("%s\n", buff);
+    fflush(stdout);
+
+  }
 
   //TODO: handle communication on new_fd
 

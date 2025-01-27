@@ -17,6 +17,35 @@
  * Return 0 on success, non-zero on failure
 */
 int client(char *server_ip, char *server_port) {
+  // https://book.systemsapproach.org/foundation/software.html#client
+
+  struct sockaddr_in sin;
+  char *host;
+  char buff[SEND_BUFFER_SIZE];
+  int s, len;
+
+  bzero((char *)&sin, sizeof(sin));  //bzero() vs memset() https://stackoverflow.com/questions/17096990/why-use-bzero-over-memset
+  sin.sin_family = AF_INET;
+  bcopy(server_ip, (char *)&sin.sin_addr, sizeof(*server_ip)); //probably broken, fix pointers or switch to getaddrinfo()
+  sin.sin_port = htons(server_port); //may not work for char*
+
+  if ((s = socket(PF_INET, SOCK_STREAM, 0)) < 0) {
+    perror("socket");
+    exit(1);
+  }
+  if (connect(s, (struct sockaddr *)&sin, sizeof(sin)) < 0) {
+    perror("connect");
+    close(s);
+    exit(1);
+  }
+  
+  while(fgets(buff, sizeof(buff), stdin)) {
+    buff[SEND_BUFFER_SIZE-1] = '\0';
+    len = strlen(buff) + 1;
+    send(s, buff, len, 0);
+  }
+
+  /*
   int sockfd, numbytes;
   char buff[SEND_BUFFER_SIZE];
   struct addrinfo hints, *servinfo, *p;
@@ -37,7 +66,7 @@ int client(char *server_ip, char *server_port) {
   connect(sockfd, servinfo->ai_addr, servinfo->ai_addrlen);
 
 
-
+  */
   return 0;
 }
 

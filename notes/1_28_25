@@ -1,0 +1,135 @@
+assignment 0: intro to socket programming tutorial
+
+objectives
+- set up VMs
+	- configuring
+- learn about sockets
+	- functions in C
+
+
+sockets
+- between application and OS layers
+- process in user space needs to communicate over the network to another computer
+- uses OS interface
+
+network
+- deliver packet to dest host
+- based on dest IP addr
+
+OS
+- deliver data to dest socket
+- based on dest port number
+
+application
+- read data from and write data to socket
+- interpret data e.g. render web page
+
+
+client-server communication: stream sockets (TCP): connection oriented
+- server
+	- create socket
+	- bind socket (what port am I on)
+	- listen for client (wait for incoming connections)
+	- accept connection
+	- receive request
+	- send response
+- client
+	- create socket
+	- connect socket
+	- send request
+	- receive response
+
+UDP: datagram based, not connection based
+
+server
+- socket()
+- bind()
+- listen()
+- accept()
+- recv()
+- send()
+client
+- socket()
+- connect()
+- send()
+- recv()
+
+
+client: learning server addr/port
+- server typically known by name and service
+	- e.g. www.jhu.edu and http
+- need to translate into IP addr and port number
+	- e.g. 23.10.110.191:80
+- get addr info with given host name and service
+	- int getaddrinfo(char *node, char *service, struct addrinfo *hints, struct addrinfo **result)
+
+e.g.
+```
+hints.ai_family = AF_UNSPEC;
+hints.ai_socktype = SOCK_STREAM;
+int status = getaddrinfo("www.jhu.edu", "80", &hints, &result);
+```
+
+creating a socket
+- int socket(int domain, int type, int protocol)
+	- returns a file descriptor (or handle) for socket
+- domain: protocol family
+	- PF_INET fro IPv4
+	- PF_INET6 for IPv6
+(etc)
+
+client: connecting soket to server
+- connect is blocking
+	- code stops executing until connect succeeds or fails
+- int connect()
+
+client: sending data
+- int send(int sockfd, void *msg, size_t len, int flags)
+client: receiving data
+- int recv(int sockfd, void *buf, size_t len, int flags)
+	- returns number of characters read (0 implies EOF) and -1 on error
+
+server: server preparing socket
+- int socket(int domain, int type, int protocol)
+- int bind(int sockfd, struct sockaddr *my_addr, socklen_t addrlen)
+
+server: allowing clients to wait
+- int listen(int sockfd, int backlog)
+	- backlog is allowed queue size
+	- non-blocking: program continues executing commands
+
+server: accept client connections
+- int accept(int sockfd, struct sockaddr *addr, socklen_t addrlen)
+	- blocking function
+
+client and server: cleaning house
+- int close(int sockfd)
+	- data in flight still reaches other end
+	- so can close() while still sending data
+
+handling multiple clients
+- fork()
+	- creates a clone of server process
+	- after a conenction established, call fork() to create a new child process to handle it
+	- don't use for assignment 0
+- using threads
+	- after a connection established, create a thread that handles the client connection
+	- not needed for assignment 0
+- handle clients sequentially
+	- use a while() loop to accept(), send/receive data, close()
+
+debugging
+- submit to gradescope to see if it passes tests
+	- unlimited tries
+	- no hidden tests(?)
+- write debugger code on VM
+- if library is supported by linux by default, open for use
+
+VM setup
+- match testing environment in gradescope
+- ubuntu 20.04 LTS
+- important especially for assignment 2 where there is no autograder but a provided rubric with self-testing requirments
+
+VM platform: multipass
+- config files provided in assignment starter code
+- instruction in README-VM.md

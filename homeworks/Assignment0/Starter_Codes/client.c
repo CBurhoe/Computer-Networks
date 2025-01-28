@@ -17,7 +17,7 @@
  * Return 0 on success, non-zero on failure
 */
 int client(char *server_ip, char *server_port) {
-  // https://book.systemsapproach.org/foundation/software.html#client
+  /* https://book.systemsapproach.org/foundation/software.html#client
 
   struct sockaddr_in sin;
   char *host;
@@ -44,12 +44,13 @@ int client(char *server_ip, char *server_port) {
     len = strlen(buff) + 1;
     send(s, buff, len, 0);
   }
+  */
 
-  /*
+  /* https://beej.us/guide/bgnet/html/#a-simple-stream-client */
   int sockfd, numbytes;
   char buff[SEND_BUFFER_SIZE];
   struct addrinfo hints, *servinfo, *p;
-  int rv;
+  int rv, len;
 
 
   memset(&hints, 0, sizeof hints);
@@ -58,15 +59,36 @@ int client(char *server_ip, char *server_port) {
 
   if ((rv = getaddrinfo(server_ip, server_port, &hints, &servinfo)) != 0) {
     fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
-    exit(1);
+    return 1;
   }
 
-  sockfd = socket(servinfo->ai_family, servinfo->ai_socktype, servinfo->ai_protocol);
-  // TODO: error handling for socket? and connect (hint: check return value and store in status)
-  connect(sockfd, servinfo->ai_addr, servinfo->ai_addrlen);
+  for (p = servinfo; p != NULL; p = p->ai_next) {
+    if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
+      perror("client: socket");
+      continue;
+    }
 
+    if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
+      close(sockfd);
+      perror("client: connect");
+      continue;
+    }
+    break;
+  }
 
-  */
+  if (p == NULL) {
+    fprintf(stderr, "client: failed to connect\n");
+    return 2;
+  }
+
+  freeaddrinfo(servinfo);
+
+  while(fgets(buff, sizeof(buff), stdin)) {
+    buff[SEND_BUFFER_SIZE-1] = '\0';
+    len = strlen(buff) + 1;
+    send(s, buff, len, 0);
+  }
+
   return 0;
 }
 

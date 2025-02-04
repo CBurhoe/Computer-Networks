@@ -1,0 +1,99 @@
+for send and recv and printf, don't use null terminator (Homework 0)
+
+hubs, switches, and routers
+
+hubs and repeaters
+- connect machines on same Layer 2 LAN
+- broadcast devices: all frames are transmitted out all physical ports
+
+switches and bridges
+- connect machines on same layer 2 LAN
+- unicast devices: only send frames out seelcted physical port based on destination MAC
+
+routers
+- connect between LANs at Layer 3 (e.g. WAN)
+- unicast devices: only send packet out selected physical port based on destination IP address
+
+
+repeaters and hubs: physical layer
+
+switches and bridges: link layer
+
+routers: network layer
+
+
+hubs and repeaters
+
+physical layer: hubs
+- joins multiple input lines electrically
+	- designed to hold multiple line cards
+	- does not necessarily amplify signal
+- similar to repeaters
+	- operates at physical layer
+
+physical layer: repeaters
+- distance limitation in LANs
+	- electrical signal becomes weaker (attenuates) as it travels/propagates
+	- limits length of a LAN
+- repeaters join LANs together into a single LAN
+	- analog electrical device
+	- continuously monitors electrical signals
+	- transmits amplified copy
+	- does not understand meaning of bits
+
+
+limitations of hubs and repeaters
+- one large shared link
+	- every bit sent everywhere - limits aggregate throughout
+- cannot support multiple LAN technologies
+	- does not buffer or interpret frames
+	- can't interconnect different rates or formats
+- limitation on maximum number of nodes and distances
+	- shared medium imposes length limits (e.g. ethernet's collision detection)
+	- signals are not rebuilt - signal fades and/or noise increases
+
+
+
+bridges and switches
+
+link layer: bridges
+- connects two or more LANs at the link layer
+	- extracts dest addr from the frame
+	- looks up dest in a table
+	- forward the frame to the appropriate segment
+- each segment can carry its own traffic
+
+link layer: switches
+- typically connect individual computers
+	- rather than shared ethernet
+- similar to bridge
+	- but typically connects hosts
+- supports concurrent communication
+	- host A talks to C, while B talks to D
+
+bridges/switches: traffic isolation
+- filter packets
+	- frame only forwarded to the necessary segments
+	- segments can support separate transmissions
+
+
+routers
+- each router has a forwarding table
+	- maps dest addr to outgoing interface
+- basic operation
+	- receives packets
+	- look at ehader to determine dest addr
+	- lookup output interface in forwarding table
+	- modify packet header (e.g., decrement TTL, update checksum)
+	- forward packet on outgoing interface
+- major components
+	- line card (data plane)
+	- switching fabric
+	- processor (control plane)
+
+benefits of CIDR and longest prefix
+- efficiency
+	- prefixes can be allocated at finer granularity
+- hierarchical aggregation
+	- upstream ISP can aggregate continuous prefixes from downstream ISP to shorter prefix
+

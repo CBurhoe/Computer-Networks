@@ -52,15 +52,16 @@ int server(char *server_port) {
     // Receive the client input
     char buff[RECV_BUFFER_SIZE];
     int recv_bytes;
-    recv_bytes = recv(new_fd, buff, RECV_BUFFER_SIZE - 1, 0);
-    if (recv_bytes == -1) {
-      perror("recv");
-      continue;
+    
+    while(recv_bytes = recv(new_fd, buff, RECV_BUFFER_SIZE, 0)) {
+      if (recv_bytes == -1) {
+        perror("recv");
+        continue;
+      }
+      buff[recv_bytes] = '\0';
+      printf("%s\n", buff);
+      fflush(stdout); //may need to bring outside while() loop
     }
-    buff[recv_bytes] = '\0';
-    printf("%s\n", buff);
-    fflush(stdout);
-
   }
   return 0;
 }

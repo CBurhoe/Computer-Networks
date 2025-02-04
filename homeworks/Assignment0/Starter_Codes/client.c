@@ -83,7 +83,7 @@ int client(char *server_ip, char *server_port) {
 
   freeaddrinfo(servinfo);
 
-  while(fgets(buff, sizeof(buff), stdin)) {
+  while(fgets(buff, SEND_BUFFER_SIZE, stdin) != NULL) {
     buff[SEND_BUFFER_SIZE-1] = '\0';
     len = strlen(buff) + 1;
     send(s, buff, len, 0);

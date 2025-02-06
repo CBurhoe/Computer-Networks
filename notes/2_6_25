@@ -1,0 +1,238 @@
+Transport Layer
+- guarantees correct, in-order delivery of data end-to-end
+- controls congestion
+- TCP - Transmission Control Protocol
+- first layer implementing end-to-end client-server connections rather than hops to switches, routers, etc
+
+two basic transport layer features
+- demultiplexing: port numbers
+	- port numbers specify the service being accessed
+	- e.g. web server uses port 80 by default
+	- e.g. echo server uses port 7 by default
+- error detection: checksums
+
+transport protocols
+- logical communication between processes
+	- sender divides a message into segments
+	- receiver reassembles segments into message
+- transport services
+	- (de)multiplexing packets
+	- detecting corrupted data
+	- optionally: reliable delivery, flow control, etc. 
+
+UDP - User Datagram Protocol
+- lightweight communication between processes, very simple design
+	- send and receive messages
+	- (de)multiplexes packets
+	- detecting corrupted data
+	- 8 byte header
+		- SRC port
+		- DST port
+		- checksum
+		- length
+		- data
+- used by many popular apps
+	- query/response for DNS
+	- real-time data in VoIP
+	- a lot of variances
+		- quick for Go
+
+advantages of UDP
+- fine-grained control
+	- udp sends as soon as application writes
+- no connection setup delay
+	- UDP sends without establishing a connection
+- no connection state in host OS
+	- no buffers, parameters, sequence numbers, etc
+- small header overhead
+	- UDP header is only 8 bytes long
+
+
+Transmission Control Protocol (TCP)
+- stream of bytes service
+	- sends/receives stream of bytes
+- reliable in-order delivery
+	- sequence numbers detect missing data
+	- acknowledgements indicate correct data
+	- checksums detect corrupted data
+- connection oriented
+	- set up and teardown TCP connection
+- flow control
+	- prevent overflow of receiver buffer
+- congestion control
+	- control network congestion
+
+breaking a stream of bytes into TCP segments
+- applications send stream/messages, TCP abstracts away complexity
+
+segment sent when:
+1. segment full (max segment size)
+2. not full, but times out, or
+3. "pushed" out by application
+
+TCP segment: 
+- IP Data
+	- TCP Data (segment)
+	- TCP Hdr
+- IP Header
+
+explanation
+- IP packet
+	- size limited by maximum transmission unit (MTU)
+	- e.g. 1500 bytes for Ethernet link
+- TCP packet
+	- IP packet with TCP header and data inside
+	- TCP header typically 20 bytes long
+- TCP segment (avoid fragmentation)
+	- maximum segment size (MSS) = MTU - IP Header - TCP Header
+	- e.g. 1500 - 20 - 20 = 1460 (or 1500 - 20 - 32 = 1448)
+
+
+sequence number
+- starts with Initial Sequence Number (ISN)
+- sequence number indicates first byte
+
+
+reliable delivery on a lossy channel with bit errors
+
+challenges of reliable data transfer
+- perfectly reliable channel
+	- trivial
+- channel with bit errors
+	- receiver detects errors and requests retransmission
+- lossy channel with bit errors
+	- some data missing, others corrupted
+- channel may reorder packets
+	- receiver cannot easily distinguish loss vs out-of-order
+
+analogy
+- alice and bob are talking but can't see each other
+	- what if bob couldn't understand one sentence from alice
+	- bob asks alice to repeat what she said
+- what if bob hasn't heard alice for a while
+	- is alice just being quiet
+	- has alice lost reception
+	- how long should alice just keep on talking
+	- maybe bob should say "uh huh" periodically
+	- maybe alice should ask "can you hear me now?"
+
+takeaways
+- 2 types of acknowledgements from receiver
+	- positive: receiver indicates it received the message (ACK)
+	- negative: receiver indicates it could not understand message (NACK)
+- sender retransmits
+	- after lack of ACKs, or
+	- after receiving a NACK, or
+	- use both (TCP uses both implicitly)
+- timeout by sender (stop and wait)
+	- don't wait forever without some acknowledgement
+
+
+TCP support for reliable delivery
+- detect bit errors: checksum
+	- detects corrupted data at the receiver
+	- receiver drops corrupted packets
+- detect missing data: sequence number
+	- used to detect a gap in the stream of bytes
+	- helps to reorder data
+- recover from lost data: retransmission
+	- sender retransmits lost or corrupted data
+
+TCP acknowledgement (ACK)
+- ACK sequence number = next expected byte = next response packet sequence number
+
+automatic repeat request (ARQ)
+- ACK and timeouts
+	- receiver sends ACK when it receives packet
+	- sender waits for ACK until times out
+- simplest ARQ protocol
+	- stop and wait
+	- send a packet, stop and wait until ACK arrives
+- can be adopted in link layer
+
+initial sequence number (ISN)
+- sequence number for very first byte
+	- why not always start with ISN=0
+- practical issue: reuse of port numbers
+	- port numbers must (eventually) get used again (in practice very frequently)
+	- old packet may still be in flight, and get associated with the new connection
+- TCP needs to change the ISN over time
+	- set from 32-bit clock that ticks every 4 microseconds
+	- clock wraps once every 4.5(...)
+
+sequence number e.g.
+- ISN = 501. sender sends 4500 bytes ACKed by receiver. next sequence number to send is 501 + 4500 = 5001
+- next 1000 byte TCP segment received. receiver acknowledges with ACK number 5001 + 1000 = 6001
+
+
+flow control: TCP sliding window
+
+problems with stop-and-wait
+- stop and wait for every segment is inefficient
+	- only one TCP segment in-flight at a time
+- consider 1.5 Mbps link with 50ms round-trip-time (RTT)
+	- assume TCP segment size of 1 KB (8 Kbits)
+	- 8 Kbits/segment at 50 ms/segment = 160 Kbps throughput
+		- 8 Kbits * (1000/50) seconds = 160 Kbps
+	- only ~11% link utilization (160/1500)
+
+sliding window
+- allow a larger amount of data in flight
+	- allow sender to get ahead of the receiver, but not too far ahead
+- receive window size
+	- amount that can be sent without ACK
+	- receiver must be able to store this amount of data
+- receiver tells the sender the window
+	- tells sender the amount of free space left
+
+
+optimizing retransmissions
+
+reasons for retransmission
+- packet lost
+- ACK lost
+	- duplicate packet
+- ACK arrives outside current timeout window/early timeout
+	- duplicate packet
+
+how long should sender wait
+- sender sets timeout to wait for ACK
+	- timeout too short: wasted retransmissions
+	- too long: excessive delays when packet lost
+- TCP sets timeout as function of RTT
+	- expect ACK to arrive at about RTT
+	- add fudge factor to account for queuing
+- how does sender learn RTT
+	- maintain running average of delay to receive an ACK
+
+timeouts are slow (~= RTT)
+- packet n is lost
+	- but packets n+1, n+2 etc might get through
+- exploit the ACKs of these packets
+	- ACKs say receiver is still waiting for nth packet
+	- duplicate ACKs suggest later packets arrived
+	- sender uses duplicate ACKs as a hint
+
+- fast retransmission
+	- retransmit after triple duplicate ACK
+
+effectiveness of fast retransmission
+- when does fast retransmission work best
+	- high likelihood of many packets in flight
+	- long data transfers, large window size, ...
+- implications for web traffic
+	- many web transfers are short (e.g. 10 packets)
+		- not many packets in flight
+	- retransmission (...)
+
+
+starting and ending a connection: TCP handshakes
+
+establishing a TCP connection: three way handshake
+1. host A sneds a synchronize sequence number (SYN) to host B
+	- A uses SYN message to tell B ISN
+2. host B returns a SYN acknowledgement (SYN ACK)
+	- B uses SYN ACK to tell A its ISN
+3. host A sends ACK of B's SYN ACK
+
+

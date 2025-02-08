@@ -57,8 +57,8 @@ int client(char *server_ip, char *server_port) {
   size_t read_bytes;
   ssize_t send_bytes;
 
-  while ((read_bytes = fread(buff, 1, SEND_BUFFER_SIZE, stdin)) > 0) {
-    
+  while (fgets(buff, SEND_BUFFER_SIZE, stdin)) {
+    read_bytes = strlen(buff);
     size_t bytes_sent = 0;
 
     while(bytes_sent < read_bytes) {

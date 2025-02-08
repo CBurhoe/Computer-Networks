@@ -52,19 +52,20 @@ int server(char *server_port) {
     // Receive the client input
     char buff[RECV_BUFFER_SIZE];
     ssize_t recv_bytes;
-    size_t bytes_written;
+    //size_t bytes_written;
     
-    while(recv_bytes = recv(new_fd, buff, sizeof(buff), 0)) {
-      bytes_written = 0;
-      while (bytes_written < recv_bytes) {
-        ssize_t written = fwrite(buff + bytes_written, 1, recv_bytes - bytes_written, stdout);
-        bytes_written += written;
-      }
-      fflush(stdout);
+    while(recv_bytes = recv(new_fd, buff, sizeof(buff) - 1, 0)) {
+      //bytes_written = 0;
+      //while (bytes_written < recv_bytes) {
+      //  ssize_t written = fwrite(buff + bytes_written, 1, recv_bytes - bytes_written, stdout);
+      //  bytes_written += written;
+      //}
+
+      //fflush(stdout);
            
-      //buff[recv_bytes] = '\0';
-      //printf("%s", buff);
-      //fflush(stdout); //may need to bring outside while() loop
+      buff[recv_bytes] = '\0';
+      printf("%s", buff);
+      fflush(stdout); //may need to bring outside while() loop
     }
     if (recv_bytes == -1) {
       perror("recv");

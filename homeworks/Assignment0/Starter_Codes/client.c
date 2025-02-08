@@ -88,19 +88,16 @@ int client(char *server_ip, char *server_port) {
 
   while ((read_bytes = fread(buff, 1, SEND_BUFFER_SIZE, stdin)) > 0) {
     
+    size_t bytes_sent = 0;
 
-    size_t remaining_bytes = read_bytes;
-    size_t bytes_written = 0;
-
-    while(remaining_bytes > 0) {
-      send_bytes = send(sockfd, buff + bytes_written, remaining_bytes, 0);
+    while(bytes_sent < read_bytes) {
+      send_bytes = send(sockfd, buff + bytes_sent, read_bytes - bytes_sent, 0);
       if (send_bytes == -1) {
         if (errno == EINTR) continue;
         perror("send");
         break;
       }
-      remaining_bytes -= send_bytes;
-      bytes_written += send_bytes;
+      bytes_sent += send_bytes;
     }
   }
   /*while(fgets(buff, sizeof(buff), stdin)) {

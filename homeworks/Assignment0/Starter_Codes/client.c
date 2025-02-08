@@ -84,11 +84,30 @@ int client(char *server_ip, char *server_port) {
   freeaddrinfo(servinfo);
 
   size_t read_bytes;
-  while(fgets(buff, sizeof(buff), stdin)) {
+  ssize_t send_bytes;
+
+  while (!feof(stdin)) {
+    read_bytes = fread(buff, 1, SEND_BUFFER_SIZE, stdin);
+
+    size_t remaining_bytes = read_bytes;
+    size_t bytes_written = 0;
+
+    while(remaining_bytes > 0) {
+      send_bytes = send(sockfd, buff + bytes_written, remaining_bytes, 0);
+      if (send_bytes == -1) {
+        if (errno == EINTR) continue;
+        perror("send");
+        break;
+      }
+      remaining_bytes -= send_bytes;
+      bytes_written += send_bytes;
+    }
+  }
+  /*while(fgets(buff, sizeof(buff), stdin)) {
     buff[SEND_BUFFER_SIZE-1] = '\0';
     len = strlen(buff) + 1;
     send(sockfd, buff, len, 0);    
-  }
+  }*/
 
   close(sockfd);
   return 0;

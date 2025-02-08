@@ -84,27 +84,29 @@ int client(char *server_ip, char *server_port) {
   freeaddrinfo(servinfo);
 
   size_t read_bytes;
-  while((read_bytes = fread(buff, 1, SEND_BUFFER_SIZE - 1, stdin)) > 0) {
+  while(fgets(buff, sizeof(buff), stdin)) {
 
-    buff[read_bytes] = '\0';
-    //buff[SEND_BUFFER_SIZE-1] = '\0';
-    //len = strlen(buff) + 1;
-    size_t total = 0;
-    size_t bytes_left = read_bytes;
-    ssize_t n;
+    //buff[read_bytes] = '\0';
+    buff[SEND_BUFFER_SIZE-1] = '\0';
+    len = strlen(buff) + 1;
+    send(sockfd, buff, len, 0);
+    //size_t total = 0;
+    //size_t bytes_left = read_bytes;
+    //ssize_t n;
 
-    while(total < len) {
-      n = send(sockfd, buff + total, bytes_left, 0);
-      if (n == -1) {
-        if (errno == EINTR) {
-          continue;
-        }
-        perror("send");
-        return 2;
-      }
-      total += n;
-      bytes_left -= n;
-    }
+    //while(total < len) {
+    //  n = send(sockfd, buff + total, bytes_left, 0);
+    //  if (n == -1) {
+    //    if (errno == EINTR) {
+    //      continue;
+    //    }
+    //    perror("send");
+    //    return 2;
+    //  }
+    //  total += n;
+    //  bytes_left -= n;
+    //}
+
     //send(sockfd, buff, len, 0);
   }
 

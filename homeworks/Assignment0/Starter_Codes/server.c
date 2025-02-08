@@ -53,16 +53,18 @@ int server(char *server_port) {
     char buff[RECV_BUFFER_SIZE];
     ssize_t recv_bytes;
     
-    while(recv_bytes = recv(new_fd, buff, RECV_BUFFER_SIZE - 1, 0)) {
+    while(recv_bytes = recv(new_fd, buff, sizeof(buff) - 1, 0)) {
+      if (recv_bytes == -1) {
+        perror("recv");
+        continue;
+      }     
       buff[recv_bytes] = '\0';
       printf("%s", buff);
       fflush(stdout); //may need to bring outside while() loop
     }
-    if (recv_bytes == -1) {
-      perror("recv");
-      continue;
-    }
+
     fflush(stdout);
+    close(new_fd);
   }
 
   return 0;

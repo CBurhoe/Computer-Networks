@@ -55,9 +55,10 @@ int server(char *server_port) {
     
     while((recv_bytes = recv(new_fd, buff, RECV_BUFFER_SIZE - 1, 0)) > 0) {
       buff[recv_bytes] = '\0';
-      if (fwrite(buff, 1, recv_bytes, stdout) != recv_bytes) {
-        perror("fwrite");
-        return 1;
+      
+      printf("%s", buff);
+      if (buff[recv_bytes - 1] != '\n') {
+        printf("\n");
       }
       //buff[recv_bytes] = '\0';
       //printf("%s\n", buff);
@@ -67,7 +68,9 @@ int server(char *server_port) {
       perror("recv");
       continue;
     }
+    fflush(stdout);
   }
+
   return 0;
 }
 

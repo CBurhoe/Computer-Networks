@@ -47,7 +47,7 @@ int client(char *server_ip, char *server_port) {
   */
 
   /* https://beej.us/guide/bgnet/html/#a-simple-stream-client */
-  int sockfd, numbytes;
+  int sockfd;
   char buff[SEND_BUFFER_SIZE];
   struct addrinfo hints, *servinfo, *p;
   int rv, len;
@@ -83,13 +83,16 @@ int client(char *server_ip, char *server_port) {
 
   freeaddrinfo(servinfo);
 
-  while(fgets(buff, SEND_BUFFER_SIZE, stdin)) {
-    buff[strcspn(buff, "\n")] = 0;
-    buff[SEND_BUFFER_SIZE-1] = '\0';
+  size_t read_bytes;
+  while((read_bytes = fread(buff, 1, SEND_BUFFER_SIZE - 1, stdin)) > 0) {
+
+    buff[read_bytes] = '\0';
+    //buff[SEND_BUFFER_SIZE-1] = '\0';
     len = strlen(buff) + 1;
     send(sockfd, buff, len, 0);
   }
 
+  close(sockfd);
   return 0;
 }
 

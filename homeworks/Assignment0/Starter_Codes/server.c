@@ -55,13 +55,7 @@ int server(char *server_port) {
     
     while(recv_bytes = recv(new_fd, buff, RECV_BUFFER_SIZE - 1, 0)) {
       buff[recv_bytes] = '\0';
-      
       printf("%s", buff);
-      //if (buff[recv_bytes - 1] != '\n') {
-      //  printf("\n");
-      //}
-      //buff[recv_bytes] = '\0';
-      //printf("%s\n", buff);
       fflush(stdout); //may need to bring outside while() loop
     }
     if (recv_bytes == -1) {

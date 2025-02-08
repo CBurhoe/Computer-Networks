@@ -54,7 +54,7 @@ int server(char *server_port) {
     ssize_t recv_bytes;
     //size_t bytes_written;
     
-    while((recv_bytes = recv(new_fd, buff, RECV_BUFFER_SIZE - 1, 0)) > 0) {
+    while((recv_bytes = recv(new_fd, buff, RECV_BUFFER_SIZE, 0)) > 0) {
       //bytes_written = 0;
       //while (bytes_written < recv_bytes) {
       //  ssize_t written = fwrite(buff + bytes_written, 1, recv_bytes - bytes_written, stdout);
@@ -63,8 +63,9 @@ int server(char *server_port) {
 
       //fflush(stdout);
            
-      buff[recv_bytes] = '\0';
-      printf("%s", buff);
+      //buff[recv_bytes] = '\0';
+      //printf("%s", buff);
+      fwrite(buff, 1, recv_bytes, stdout);
       fflush(stdout); //may need to bring outside while() loop
     }
     if (recv_bytes == -1) {

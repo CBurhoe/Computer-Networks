@@ -25,7 +25,6 @@ int server(char *server_port) {
   struct addrinfo hints, *res;
   int sockfd, new_fd;
 
-  // TODO: include error handling for above
 
   memset(&hints, 0, sizeof hints);
   hints.ai_family = AF_UNSPEC;
@@ -34,12 +33,21 @@ int server(char *server_port) {
 
   if ((status = getaddrinfo(SERVER_IP, server_port, &hints, &res)) != 0) {
     fprintf(stderr, "getaddrinfo error: %s\n", gai_strerror(status));
-    exit(1);
+    return 1;
   }
 
-  sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-  bind(sockfd, res->ai_addr, res->ai_addrlen);
-  listen(sockfd, QUEUE_LENGTH);
+  if ((sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol)) < 0) {
+    perror("socket");
+    return 2;
+  }
+  if (bind(sockfd, res->ai_addr, res->ai_addrlen) == -1) {
+    perror("bind");
+    return 3;
+  }
+  if (listen(sockfd, QUEUE_LENGTH) == -1) {
+    perror("listen");
+    return 4;
+  }
 
   while(1) {
     addr_size = sizeof their_addr;
@@ -49,30 +57,19 @@ int server(char *server_port) {
       continue;
     }
 
-    // Receive the client input
     char buff[RECV_BUFFER_SIZE];
     ssize_t recv_bytes;
-    //size_t bytes_written;
     
     while((recv_bytes = recv(new_fd, buff, RECV_BUFFER_SIZE, 0)) > 0) {
-      //bytes_written = 0;
-      //while (bytes_written < recv_bytes) {
-      //  ssize_t written = fwrite(buff + bytes_written, 1, recv_bytes - bytes_written, stdout);
-      //  bytes_written += written;
-      //}
-
-      //fflush(stdout);
-           
-      //buff[recv_bytes] = '\0';
-      //printf("%s", buff);
+      if (recv_bytes == -1) {
+        perror("recv");
+        close(new_fd);
+        continue;
+      }
       fwrite(buff, 1, recv_bytes, stdout);
-      fflush(stdout); //may need to bring outside while() loop
+      fflush(stdout); 
     }
-    if (recv_bytes == -1) {
-      perror("recv");
-      continue;
-    }
-    //fflush(stdout);
+    
     close(new_fd);
   }
 

@@ -1,0 +1,240 @@
+congestion control
+
+congestion
+- best effort network does not block data from entering the network
+	- can become overloaded
+	- congestion == load higher than capacity
+- e.g.
+	- link layer: ethernet frame collisions
+	- network layer: full IP packet buffers
+- excess packets are simply dropped
+	- sender can retransmit
+	- but simply retransmitting leads to problems...
+
+congestion collapse
+- simply retransmitting easily leads to congestion collapse
+	- senders retransmit lost packets
+	- leads to even greater load in the network
+	- results in even more packet loss
+
+tcp history
+- 1974: 3 way handshake (SYN, SYN ACK, ACK)
+- 1978: tcp ip split into tcp/ip
+- 1983: january 1, ARPANET switches to tcp/ip
+- 1986: internet begins to suffer from congestion collapse
+- 1987-1988: van jacobsen fixes tcp, publishes seminal tcp paper (tcp tahoe)
+- 1990: fast recover and fast retransmit added (tcp reno)
+
+tcp pre-tahoe
+- endpoint has the flow control window size
+- on connection establishment, send a full window of packets
+- start a retransmit timer for each packet
+- problem: what if window is much larger than what the network can support
+
+detect and respond to congestion
+- end hosts do not know available bandwidth
+- what does the end host see when a packet is sent
+- what can the end host change to address congestion
+
+detecting congesiton
+- observing end-to-end performance
+	- can we use mechanisms already available in tcp
+- packet loss or delay over the path (in link layer physical connections)
+	- packet loss: dropped packet suggests a packet buffer is full
+	- packet delay: increased RTT suggests packets are getting queued
+
+responding to congestion
+- upon detecting congestion
+	- decrease sending rate- avoid congestion collapse
+- what if conditions improve
+	- missed opportunity to send at low rate when more bandwidth is available
+- upon not detecting congestion
+	- increase sending rate, a little at a time
+	- see if packets get through
+- tcp seeks throughput-efficiency
+
+tcp congestion window (CWND)
+- not the same as the sliding window in flow control
+	- sliding window prevents overloading receiver
+	- CWND prevents overloading bottleneck link between sender and receiver
+- bottleneck link
+	- link with lowest available bandwidth on path
+	- can change throughout connection- unimportant which specific link is bottleneck
+- CWND tries to maximize throughput while minimizing retransmissions
+	- available bandwidth changes- must be adjusted throughout connection
+	- needs to respond to indications of congestion and newly available bandwidth
+- also want to balance efficiency with fairness
+	- tcp flows should share available bandwidth equitably
+
+tcp seeks fairness and efficiency
+
+balancing efficiency and fairness
+- additive increase/additive decerease (AIAD)
+- multiplicative increase/multiplicative decrease (MIMD)
+	- drop: divide CWND by factor
+	- success: multiply CWND by factor
+- additive increase/multiplicative decrease (AIMD)
+	- drop: divide CWND by factor
+	- success: increase CWND by constant
+	- on packet loss, divide congestion window in half
+	- on success for last window, increase window linearly
+
+why multiplicative
+- respond aggressively to bad news
+	- congestion is very bad for everyone
+	- need to react aggressively
+- nice theoretical properties
+	- makes efficient use of network resources
+- examples of exponential backoff
+	- tcp: divide sending rate in half
+	- ethernet: double retransmission timer
+
+congestion in a drop-tail FIFO queue
+- access to bandwidth: first in first out queue
+	- packets transmitted in order they arrive
+- access to buffer space (...)
+
+how it looks to end host
+- delay: packet experiences high delay
+- loss: packet gets dropped along path
+- how does tcp sender learn this
+	- delay: RTT estimate
+	- loss: timeout and/or duplicate ACKs
+
+tcp congestion window
+- each tcp sender maintains their own CWND
+	- max number of bytes to have in flight (not yet ACKed)
+- adapting CWND to network conditions
+	- back off: decrease CWND upon losing packet
+	- optimistically explore: increase upon successfully ACKed window
+	- always struggling to (...)
+
+receiver vs congestion windows
+- flow control
+	- keep fast sender from overwhelming slow receiver
+	- e.g. high powered data sender > smart watch
+- congestion control
+	- keep a set of senders from overflowing the network
+- different concepts but similar mechanisms
+	- tcp flow control: receiver window
+	- tcp congestion control: congestion window
+	- sender tcp windowa: min(congestion window, receiver window)
+
+sources of poor tcp performance
+- larger buffers in routers
+	- higher latency- packets spend more time in buffers during sustained congestion
+- smaller buffers in routers
+	- greater loss- routers unable to handle bursts that lead to transient congestion
+- smaller buffers on end-host
+	- lower throughput- forces smaller window
+- slow application receivers
+	- lower throughput- packets spend more time in receiver buffer
+
+starting a new flow
+
+how should a new flow start
+- start slow (small CWND) to avoid overloading network
+	- we don't know enough about the network yet
+- but it could take a long time to get ramped up
+
+slow start phase
+- start with small CWND
+	- e.g. inital CWND = 1 MSS
+	- initial send rate is MSS/RTT
+- could be pretty wasteful
+	- might be much less than actual bandwidth (could be more than 1Gbps available)
+	- linear increase takes a long time to reach this
+(...)
+
+slow start in action
+- double CWND per RTT
+- exponential growth of CWND
+
+tcp originally had no congestion control
+- source would start by sending entire receiver window
+- led to congestion collapse
+- slow start is comparatively slower
+
+two kinds of loww in tcp
+- timeout vs triple duplicate ACK
+	- which suggests network is in worse shape: timeout
+	- reason: triple duplicate means *some* packets are getting through; timeout means none are getting through
+- triple duplicate ACK (tcp reno)
+	- might be caused by bit errors or micro congestion
+	- react less aggressively (multiplicative decrease)
+- timeout
+	- timeout suggests entire window was lost (did not get 3 duplicate ACKs)
+	- blasting entire CWND would cause another burst of packets in the network
+	- be aggressive: start over with a low CWND
+
+repeating slow start after timeout
+- slow start restart
+	- go back to CWND = 1MSS
+	- but, take advantage of knowing the previous value of CWND
+	- slow start until reaching half of previous CWND
+	- then continue with AIMD
+
+observation from CWND over time graph
+- triple duplicate is much more common than timeout
+
+repeating slow start after idle period
+- suppose tcp connection goes idle for a while
+- eventually network conditions change
+	- maybe many more flows traversing the link than before
+- dangerous to start transmitting at the old rate
+	- previously idle (...)
+
+tcp problem
+- 1 MSS = 1 Kb
+- max capacity of link: 200 KBps
+- RTT = 100 ms
+- new tcp flow starting, no other traffic in network, assume no queues in network
+
+- approximate value of CWND at time of first packet loss
+	- 32 KB
+	- slow start: 1KB -> 2KB -> 4KB -> 8KB -> 16KB -> 32KB
+- about how long until sender discovers first loss
+	- 600 ms (6 cycles * 100 ms RTT)
+
+popular modern tcp variants
+- CUBIC
+	- loss based
+	- increase CWND analogous to cubic function
+	- more quickly and reliably in the face of high latency
+	- default in Linux kernel since 2.6.19, macos, windows 10.1709
+- BBR
+	- developed by google
+	- detects increases in RTT as evidence of congestion
+	- might not always compete fairly with loss based congestion
+
+tcp CUBIC after loss
+- "CUBICL a new tcp-friendly high-speed tcp variant" paper
+
+fairness
+
+tcp achieves a notion of fairness
+- effetive utilizaiton is not only goal
+	- we also want to be fair to various flows
+- simple defL equal bandwidth shares
+	- N flows that each get 1/N of the bandwidth
+- what if flows traverse different paths
+	- result: bandwidth shared in proportion to RTT
+
+what about cheating
+- some folks are more fair than others
+	- using multiple tcp connecitons in parallel (BitTorrent p2p file transfer)
+	- modifying tcp implementation in OS
+		- some cloud services start tcp at >1MSS
+	- use UDP instead of tcp
+- what is the impact
+	- good guys will slow down to make room for you
+	- you get an unfair share of the bandwidth
+- very hard to prevent cheating
+
+conclusions
+- congestion is inevitable
+	- internet does not reserve resources in advance
+	- tcp actively tries to push the envelope
+- congestion can be handled
+	- additive increase, multiplicative decrease
+	- slow start and slow-start restart

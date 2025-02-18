@@ -1,0 +1,304 @@
+midterm thursday
+- everything through today
+	- protocol layers
+	- resource allocation
+
+- all material covered in class
+
+- one page of notes, double sided
+
+
+
+last class: congestion control
+- what can end hosts do to collectively make good use of shared underlying resources
+
+today: queue managemnt
+- what can link layer do to make good use of resources
+
+router
+- line cards
+	- data plane
+- switching fabric
+	- how do line cards connect
+	- may be a scheduler
+- together handle data forwarding
+- processor
+	- handles routing problem
+
+question: how do line cards deal with queuing
+
+line cards (interface cards, adapters)
+- to/from switch
+- lookup
+- transmit
+- to/from link
+- packet handling
+	- packet forwarding
+	- buffer management
+	- link scheduling
+	- packet filtering (block some packets)
+	- rate limiting
+	- packet marking
+	- measurement
+
+queue management issues
+- scheduling discipline
+	- which packets to send
+	- some notion of fairness, priority
+- drop policy
+	- when should you discard a packet
+	- which packet to discard
+- goal: balance throughput and delay
+	- huge buffers minimize drops, but add to queuing delay
+		- higher RTT, longer slow-start, etc.
+
+
+FIFO scheduling and Drop-Tail
+- access to the bandwidth: first-in, first-out queue
+	- packets transmitted in the order they arrive
+- access to the buffer space: drop-tail queuing
+	- if queue is full, drop incoming packet
+
+early detection of congestion
+
+burst loss from drop-tail queuing
+- TCP depends on packet loss
+	- packet loss is indication of congestion
+	- TCP additive increase drives network into loss
+- drop-tail leads to bursty loss
+	- congested link: many packets encounter full queue
+	- synchronization: many connections lose packets at once
+
+slow feedback from drop tail
+- feedback comes when buffer is completely full
+	- even though buffer has been filling for a while
+- plus the filling buffer is increasing RTT
+	- making detection even slower
+- better to give early feedback
+	- get 1-2 connections to slow down before it's too late
+
+random early detection (RED)
+- router notices that queue is getting full
+	- randomly drops packets to signal congestion
+- packet drop probability
+	- drop probability increases as queue length increases
+	- else, set drop probability f(avg queue length)
+	- 0 for very small avg queue length
+	- increases linearly for intermediate avg queue length
+	- jump to 1 for high avg queue length
+
+properties of RED
+- drops packets before queue is full
+	- in the hope of reducing the rates of some flows
+- tolerant of burstiness in the traffic
+	- by basing decisions on average queue length
+
+problems with RED
+- hard to get tunable parameters just right
+	- how early to start dropping packets
+	- what slope for increase in drop probability
+	- what time scale for averaging queue length
+- RED has mixed adoption in practice
+	- if parameters aren't set right, RED doesn't help
+- many other variations in research community
+	- names like Blue (self tuning), FRED, etc
+
+
+from loss to notification
+
+feedback: from loss to notificaiton
+- early dropping of packets
+	- pro: gives early feedback
+	- con: has to drop a packet to give the feedback
+- explicit congestion notification
+	- router marks packet with an ECN bit
+	- sending host interprets as a sign of congestion
+	- cross layer design: router in network layer communicates information to end-hosts in transport layer
+
+explicit congestion notification
+- needs support by router, sender, and receiver
+	- end-hosts check ECN-capable during TCP handshake
+- ECN protocol (repurpose 4 header bits)
+	- sender marks "ECN-capable" when sending (TCP header)
+	- if router sees this, and is congested, marks packet as "ECN congestion experienced" (IP header)
+	- if receiver sees "congestion experienced", marks "ECN echo" flag in responses until congestino is ACKed (TCP header)
+	- if sender sees "ECN echo", reduces CWND and marks "congestion window reduced" (...)
+
+ECN design decisions
+- separate ECN "experienced" and "echo" flags
+	- "experienced" flag helps detect reverse path congestion
+	- congestion could happen in either direction (often not bidirectional)
+		- want sender to react to forward direction
+- "echo" resent & "congestion window reduced" ACK
+	- congestion in reverse path can cause ECN-echo to be dropped
+		- still want to respond to congestion in forward path
+	- only should apply backoff once per CWND
+
+ECN used today (by default)
+- windows
+	- server (since 2012) yes, desktop no
+- linux
+	- use if requested by incoming connections
+	- do not request when initiating TCP connections
+- MacOS
+	- quite mixed
+	- after some version will enable by default, but actually didn't
+
+
+link scheduling
+
+first-in, first-out scheduling
+- FIFO scheduling
+	- simple, but restrictive
+- e.g.: two kinds of traffic
+	- VoIP needs low delay (real time audio)
+		- traditional calling uses circuit switching to reserve resources and audio streaming
+		- VoIP uses IP packets
+	- E-mail is not that sensitive about delay
+	- voice traffic waits behind e-mail
+
+strict priority
+- multiple levels of priority
+	- always transmit high-priority traffic, when present
+- isolation for the high-priority traffic
+	- almost like it has a dedicated link
+	- except for (small) delay for packet transmission
+- but, lower priority traffic may starve
+	- needs to wait until all high-priority traffic is sent out
+	- high-priority traffic hogs resources
+
+fair queuing
+- classify data into different flows rather than keeping in simple queue
+- bit-by-bit round robin
+- what is a flow
+	- flow 5-tuple: protocol, IP source/dest, port source/dest
+- if non-work conserving (resources can go idle)
+	- each flow gets at most its allocated weight
+- fair queuing (FQ) is work-conserving
+	- send extra traffic from one queue if others are idle
+	- results in higher utilization than non-work conserving
+- FQ results in max-min fairness
+	- maximize the minimum rate of each flow
+
+max-min fairness
+- maximize the min rate of each flow
+	- allocate in order of increasing demand
+	- no flow gets more than demand
+	- any excess is shared equally
+	- max-min fair: cannot increase the rate of one flow without decreasing the rate of another flow with a lower or identical rate
+- max flow: saturate low demand flows while equally distributing resources, allocate excess to higher demands
+
+weighted fair scheduling
+- weighted fair scheduling
+	- assign each queue a fraction of the link bandwidth
+	- rotate across queues on a small time scale
+- how can we give weights
+	- protocol class, bit markings, prefixes, etc
+
+bit-by-bit weighted fair queuing
+- flows allocated different rates by servicing different number of bits for each flow during each round
+
+fair queuing in the router
+- ingress and egress points
+- switching fabric contains a classifier to classify flows from ingress point, output to the scheduler which orders data for egress point
+
+packet vs "fluid" system
+- bit-by-bit FQ is not implementable
+- in real packet based systems
+	- one queue is served at any given time
+	- packet transmission cannot be preempted
+- goal: packet scheme that is close to fluid system
+	- bound performance with regard to fluid system
+		- how much worse in worst case? what about expected case?
+
+first cut: simple round robin
+- serve a packet from non-empty queues in turn
+	- let's assume all flows have equal weight
+- variable packet length
+	- get more service by sending bigger packets
+	- e.g. flow 1 with 1000-byte packets, flow 2 with 500-byte packets
+		- flow 1 will get 2/3 of the link bandwidth
+		- flow 2 will get 1/3 of the link bandwidth
+- unfair instantaneous service rate (especially with variable weights)
+	- what if a packet arrives right after its turn
+
+packet-by-packet fair queuing
+- key idea
+	- determine finish time of packets in bit-by-bit system, assuming no more arrivals
+	- serve packets in order of finish times
+- deals better with variable size packets
+	- e.g. two 500-byte packets take as much time to finish as a 1000-byte packet
+
+implementing FQ
+- challenge
+	- determining finish time is hard
+- idea
+	- don't need finish time
+	- need finish order (much easier to calculate)
+
+finish order
+- in what order do the packets finish
+	- increasing (length)/(weight)
+
+bit-by-bit system round robin
+- round- one complete cycle through all the queues sending w_i bits per queue
+- packet of length L takes L/w_i rounds to finish
+
+packet-by-packet system
+- when a packet arrives
+	- calculate finish order in bit-by-bit system
+- next packet to transmit is always (...)
+
+
+implementation trade-offs
+- FIFO
+	- one queue, trivial scheduler
+- strict priority
+	- one queue per priority level, simple scheduler
+- weighted fair scheduling
+	- one queue per traffic class, more complex scheduler
+
+
+quality of service (QoS) guarantees
+
+quality of service
+- guaranteed performance
+	- alternative to best-effort delivery model
+- QoS protocols and mechanisms
+	(...)
+
+distinguishing traffic
+- applications compete for bandwidth
+	- email traffic can cause congestion/losses for VoIP
+- principle 1: packet marking
+	- helps router distinguish between traffic classes
+	- e.g. type of service (ToS) bits in IP header
+
+preventing misbehavior
+- applications misbehave
+	- e.g. VoIP sends packets faster than 1Mbps
+- principle 2: policing (traffic shaping)
+	- protect one traffic class from another
+	- enforce rate limit on the traffic
+
+subdividign link resources
+- principle 3: link scheduling
+	- ensure each application gets its share
+	- while (optionally) using any extra bandwidth
+	- e.g. weighted fair queuing
+
+reserving resources, and saying no
+- traffic cannot exceed link capacity
+	- deny access rather than degrade performance
+- mechanism 4: admission control
+	- application declares needs in advance
+	- application denied if insufficient resources available
+
+takeaways
+- can affect performance in network middle in addition to edge
+	- random early detection
+	- early congestion notification
+	- queuing strategies
+- maybe simple is not always best?
+	- fair queuing can increase fairness
+	- sometimes we need better QoS guarantees

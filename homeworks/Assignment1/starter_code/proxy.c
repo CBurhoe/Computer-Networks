@@ -11,6 +11,9 @@
 #include <errno.h>
 #include <netinet/tcp.h>
 
+#define QUEUE_LENGTH 10
+#define RECV_BUFFER_SIZE 2048
+
 /* TODO: proxy()
  * Establish a socket connection to listen for incoming connections.
  * Accept each client request in a new process.
@@ -63,7 +66,7 @@ int proxy(char *proxy_port) {
     exit(1);
   }
 
-  if (listen(sockfd, 10) == -1) {
+  if (listen(sockfd, QUEUE_LENGTH) == -1) {
     perror("listen");
     exit(1);
   }
@@ -82,7 +85,21 @@ int proxy(char *proxy_port) {
     
     if ((childpid = fork()) == 0) {
       //handle the connecting client request
-
+      char buff[RECV_BUFFER_SIZE];
+      ssize_t recv_bytes;
+      while((recv_bytes = recv(new_fd, buff, RECV_BUFFER_SIZE, 0)) > 0) {
+        if (recv_bytes == -1) {
+          perror("recv");
+	  continue
+	}
+	// have client request (max size 2048 bytes)
+	// TODO: 
+	// - parse out request line and headers
+	// - open connection to requested resource
+	// - send request to resource
+	// - recv response from resource
+	// - write to client socket
+      }
       //handle killing child (process)
     }
     close(new_fd);

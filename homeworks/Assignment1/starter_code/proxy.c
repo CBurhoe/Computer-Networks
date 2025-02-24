@@ -24,7 +24,7 @@ int proxy(char *proxy_port) {
   struct sockaddr_storage their_addr;
   socklen_t addr_size;
   int sockfd, new_fd;
-  struct addrinfo hints, *res;
+  struct addrinfo hints, *res, *p;
 
   memset(&hints, 0, sizeof hints);
   hints.ai_family = AF_UNSPEC;

@@ -78,6 +78,8 @@ int proxy(char *proxy_port) {
     exit(1);
   }
 
+  pid_t childpid;
+
   while(1) {
     sin_size = sizeof their_addr;
     new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
@@ -88,7 +90,7 @@ int proxy(char *proxy_port) {
 
     inet_ntop(their_addr.ss_family, get_in_addr((struct sockaddr *)&their_addr), s, sizeof s);
     
-    if (!fork()) {
+    if ((childpid = fork()) == 0) {
       //handle the connecting client request
 
       //handle killing child (process)

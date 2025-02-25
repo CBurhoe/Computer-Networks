@@ -99,6 +99,9 @@ int proxy(char *proxy_port) {
 	// - send request to resource
 	// - recv response from resource
 	// - write to client socket
+	
+	//ParsedRequest *client_request = ParsedRequest_create();
+
       }
       //handle killing child (process)
     }

@@ -1,0 +1,234 @@
+middleboxes and tunneling
+
+internet ideal: simple network model
+- globally unique identifiers
+	- each node has unique IP address reachable from everyone and everywhere
+- simple packet forwarding
+	- network nodes simply forward packets without modifying or filtering them
+
+internet reality
+- ip address exhasution
+	- not enough unique IP addresses for each host
+- security concerns
+	- detecting and blocking unwanted traffic
+- replicated services
+	- load balancing over server replicas
+- performance concerns
+	- allocating bandwidth, caching content, etc.
+- incremental deployment
+	- new technology deployed in stages
+
+middleboxes
+- middleboxes are intermediaries
+	- interposed between communicating hosts
+	- often without knowledge of one or both parties
+- myriad uses
+	- address translators
+	- firewalls
+	- traffic shapers
+	- intrusion detection
+	- transparent proxies
+	- application accelerators
+- pros
+	- solve real/pressing problems
+	- needs not likely to go away
+- cons
+	- violation of layering
+	- hard to reason about
+	- responsible for subtle bugs
+
+firewalls
+- firewall filters packet-by-packet based on
+	- source and dest ip addresses and port numbers
+	- TCP SYN and ACK bits; ICMP (internet control mechanism protocol) message type
+	- deep packet inspection (DPI)
+
+packet filtering e.g.
+- block all packets with IP protocol field = 17 and packets with either src or dest port = 23
+	- all incoming and outgoing UDP flows blocked
+	- also blocks telnet connections
+- block inbound TCP packets with SYN but no ACK
+	- prevents external clients from making TCP connections with internal clients
+	- but allows internal clients to connect to outside
+
+firewall configuration
+- firewall applies a set of rules to each packet
+	- decides whether to permit or deny each packet
+- each rules is a test on the packet
+	- comparing headers, deciding whether to allow/deny
+- order matters
+	- once packet matches a rule, decision is done
+e.g.
+- alice runs a network in 222.22.0.0/16
+- wants to let bob's school access to certain hosts
+	- bob is on 111.11.0.0/16
+	- alices special hosts on 222.22.22.0/24
+- alice doesn't trust trudy inside bobs network
+	- trudy is on 111.11.11.0/24
+- alice doesn't want any other internet traffic
+
+stateful firewall
+- stateless firewall
+	- treats each packet independently
+- stateful firewall
+	- remembers connection-level information
+	- e.g. client initiates connection with a server and firewall allows server to send return traffic
+
+variation: traffic management
+- permit vs deny too black and white
+	- alt: classify traffic using rules, handle classes differently
+- traffic shaping (rate-limiting)
+	- limit bandwidth for certain traffic
+- separate queues
+	- use rules to group related packets
+	- apply weighted fair scheduling across groups
+
+network address translation (NAT)
+
+history of NATs
+- IP address space depletion
+	- clear in early 90s that 2^32 addresses is not enough
+	- work began on successor to IPv4
+- but everything still needed to work until widespread IPv6 adoption
+	- share addresses among numerous devices
+	- without requiring changes to existing hosts
+- meant as a short term solution
+	- now: NAT is widely deployed
+	- many peopl rely on it as a very simple firewall
+
+NAT
+- problem
+	- local address is not globally unique
+- NAT translates local IP addresses to global
+	- make inside look like single IP address
+	- change header checksums accordingly
+	- outbound: change src IP addr
+	- inbound: change dest IP addr
+
+port-translating NAT
+- two hosts communicate with the same destinaiton
+	- destination needs to differentiate the two
+- map outgoing packets
+	- change source address and source port
+- opposite for inbound packets
+- maintain a translation table
+	- map of (src addr, port number) to (NAT addr, new port #)
+- map incoming packets
+
+
+maintaining the mapping table
+- create entry upon seeing an outgoing packet
+	- packet with new (src addr, src port) pair
+- eventually need to delete entries to free up port numbers
+	- when? if no packets arrive before a timeout
+	- risks disrupting a temporarily idle connection
+	- best practice: at least 2 hours 4 minutes for TCP
+- example of soft state
+	- removing state if not refreshed for a while
+
+where is NAT implemented
+- home router (e.g. TP-Link)
+	- integrates router, DHCP server, NAT, etc.
+	- use single IP address from the ISP
+- campus/corporate network, wireless 4G/5G networks
+	- NAT at the conneciton to the Internet
+	- share a collection of public IP addresses
+
+practical objections against NAT
+- port numbers are meant to identify sockets
+	- NAT uses them to identify end hosts
+	- difficult to run a server behind a NAT (before the server sends a packet)
+
+peer to peer traffic (NAT traversal)
+1. peer registers with rendezvous
+2. other peer contracts rendezvous
+3. rendezvous sends to each peer the others IP:port
+4. try to connect in each direction
+	- if one succeeds, done
+5. otherwise, proxy through relay
+
+principled objectiosn against NAT
+- routers are not supposed to look at port numbers
+	- network layers should care only about IP header
+	- port numbers are part of transport header
+- NAT violates the end-to-end argument
+	- network nodes should not modify packets
+		- aside form TTL and checksum
+- IPv6 is a cleaner solution
+	- better to migrate than limp along with a hack
+
+replicated servers
+- one site, many servers
+	- e.g. youtube
+
+load balancer
+- splits load over server replicas
+	- at connection level
+- apply load balancing policies
+
+supports layer 2 failover
+
+wide-area accelerators
+
+at connection point to internet
+- improve end to end performance
+	- through buffering
+
+e.g. improve TCP throughput
+- appliance with lot of local memory
+- sends ACK packets quickly to sender
+- overwrites receive window with large value
+- or even run a new and improved version of TCP
+
+e.g. compression
+e.g. caching
+- cache packet
+- send cached packet
+- cache at the other end
+
+eg. encryption
+- two sites share keys for encrypting traffic
+- sending app encrypts data
+- receiving app decrypts
+- protects sites from snoopers on internet
+
+
+tunneling
+
+IP tunneling
+- IP tunneling is a virtual point-to-point link
+	- illusion of a direct link between two nodes
+- encapsulation of packet inside IP datagram
+	- B stuffs IP packet from A into an IP packet addressed to E
+		- original packet is payload of new IP packet
+	- E decapsulates packet and forwards the inner packet
+
+6Bone: deploying IPv6 over IPv4
+- encapsulate IPv6 packet inside IPv4 packet
+
+
+remote access virtual private network
+- tunnel from user machine to VPN server
+	- a virtual link across the internet to the local network
+- encapsulates packets to/from user
+	- packet from 12.1.1.73 to 12.1.1.100
+	- inside a packet from 1.2.3.4 to 12.1.1.1
+	- interior packet can be point-to-point encrypted
+
+commercial VPNs
+- tunnel from user machine to VPN server
+- VPN server NATs of TCP proxies traffic to origin sites
+	- traffic between client and VPN encrypted
+	- VPN anonymizes IP of client to rest of internet
+		- potentiall circumvent censorship (firewall) on client-side
+	- client must fully trust VPN provider
+
+conclusion
+- middleboxes address important problems
+	- blockign unwanted traffic (firewall)
+	- getting by with fewer IP addresses (NAT)
+	- making better use of network resources (load balancing)
+	- improving end to end performance (wide-area accelerators)
+- middleboxes cause problems of their own
+	- no longer globally unique IP addresses
+	- cannot assume network simply delivers packets

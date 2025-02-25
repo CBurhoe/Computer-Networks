@@ -90,7 +90,7 @@ int proxy(char *proxy_port) {
       while((recv_bytes = recv(new_fd, buff, RECV_BUFFER_SIZE, 0)) > 0) {
         if (recv_bytes == -1) {
           perror("recv");
-	  continue
+	  continue;
 	}
 	// have client request (max size 2048 bytes)
 	// TODO: 

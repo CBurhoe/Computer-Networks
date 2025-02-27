@@ -1,0 +1,213 @@
+routing
+
+routing: mapping link to path
+- logical link to physical path
+
+data and control planes
+- line cards: data plane
+- control plane: routing card
+
+
+routing vs forwarding
+- forwarding: data plane
+	- directing data packet to an outgoing link
+	- using the forwarding tables
+- routing: control plane
+	- computing paths the packets will follow
+	- routers talking amongst themselves
+	- creating the forwarding tables
+
+
+three issues to address
+- what does the protocol compute
+	- e.g., shortest paths
+- what algorithm does the protocol run
+	- e.g., link-state routing, distance vector routing
+- how do routers learn end host locations
+	- e.g., injecting into the routing protocol
+
+
+different types of paths
+- shortest paths
+- most secure paths
+- policy compliant paths
+
+- trade-offs
+	- state to represent the paths
+	- efficiency of the paths
+	- ability to support multiple paths
+	- complexity of path computation
+
+spanning tree
+- one tree that reachers every node
+	- single path between each pair of nodes
+	- no loops, so can support broadcast easily
+	- downside: paths can be long, and some links unused
+
+shortest paths
+- shortest paths between pairs of nodes
+	- a shortest path tree rooted at each node
+	- minimum hop count or minimum sum of edge weights
+	- multipath routing is limited to equal cost multipath
+
+local policy at each hop
+- locally best path
+	- local policy: each node picks the path it likes best
+		- among the paths chosen by its neighbors
+
+spanning tree alg
+- elect a root
+	- the switch with the smallest identifier
+	- and form a tree from there
+- alg
+	- repeatedly talk to neighbors
+		- node Y is the root
+		- my distance from Y is d
+	- update based on information from neighbors
+		- smaller ID as the root
+		- update distance d+1
+- tiebreakers
+	- lowest bridge ID, cost to the root, sender bridge ID, sender port ID
+
+spanning tree example
+- first round
+	- everyone thinks they're root
+- second round
+	- 1 and 2 still think they're root
+	- 3,5,6 recognize 1 as root
+	- 4,7 think 2 is root
+	- pruned edge 5-6
+- third round
+	- everyone agrees 1 is root
+	- pruned edges 2-6 and 4-7
+
+shortest-path problem
+- compute: path costs to all nodes
+	- from a given source u to all other nodes
+	- cost of path through each outgoing link
+	- next hop along the least-cost path to s
+
+link state: dijkstra's alg
+- flood the topology info to all nodes
+- each node computes shortest path to other nodes
+
+```
+init:
+S = {u}
+for all v in V
+  if (v adjacent to u)
+    D(v) = c(u,v)
+  else
+    D(v) = infinity
+
+loop:
+for w in S
+  add w with smallest D(w) to S
+  update D(v) for all adjacent v:
+    D(v) = min(D(v), D(w) + c(w,v))
+```
+
+
+distance vector: Bellman-Ford alg
+- define distances at each node x
+	- d_x(y) = cost of least-cost path from x to y
+- update distances based on neighbors
+	- d_x(y) = min(c(x,y) + d_v(y)) over all neighbors v
+- used in routing information protocol (RIP) and enhanced interior gateway routing protocol (EIGRP)
+
+
+link state vs distance vector
+
+link state
+- global knowledge
+- more traffic for flooding
+- converges faster
+- no loop
+
+distance vector
+- local knowledge
+- less traffic (only forwarding table)
+- converges slowly
+- persistent looping problems
+- count of infinity
+
+path vector routing
+- extension of distance vector routing
+	- support flexibe routing policies
+- key idea: advertise the entire path
+	- distance vector: send distance metric per destination d
+	- path vector: send entire path for destination d
+- used in Border Gateway Protocol (BGP)
+
+flexible policies for path vector
+- each node can apply local policies
+	- path selection: which path to use
+	- path export: which path to advertise
+
+end-to-end signaling
+- establish end-to-end path in advance
+	- learn the topolog (as in link-state routing)
+	- end host or router computes and signals a path
+		- signaling: install entry for each circuit at each hop
+		- forwarding: look up the circuit ID in the table
+- used in MPLS with RSVP
+
+source routing
+- similar to end-to-end signaling
+	- but packet carries hops in the path
+- end-host control
+	- tell the end host the topology
+	- let the end host select the end-to-end path
+- variations of source routing
+	- strict: specify every hop
+	- loose: specify intermediate points
+		- used in IP source routing (but almost always disabled)
+
+learning where the hosts are
+
+finding the hosts
+- building a forwarding table
+	- computing paths between network elements
+		- and figuring out where the end hosts are
+- how to find hosts
+	1. learning/flooding
+	2. injecting into the routing protocol
+	3. disseminating using a different protocol
+	4. directory service
+
+learning and flooding
+- when a frame arrives
+	- inspect the source address
+	- associate address with the incoming interface
+- when the frame has an unfamiliar destination
+	- forward out all interfaces
+	- except incoming interface
+
+injecting into routing protocol
+- treat the end host (or subnet) as a node
+	- disseminate in the routing protocol
+	- e.g., flood information about where addresses attach
+- used in OSPF and IS-IS, especially in enterprise networks
+
+disseminate wiht another protocol
+- distribute using another protocol
+	- one router learns the route
+	- shares the informaiton with other routers
+
+directory service
+- contact a service to learn the location
+	- look up the end-host or subnet address
+	- determine the label to put on the packet
+	- e.g., domain name system (DNS)
+
+conclusion
+- ethernet LAN and home networks
+	- spanning tree, MAC learning, flooding
+- enterprise
+	- link-state routing, injecting subnet addresses
+- backbone
+	- link-state routing inside
+	- path-vector routing (BGP) with neighboring domains
+	- iBGP dissemination
+- data centers
+	- many different solutions, still in flux

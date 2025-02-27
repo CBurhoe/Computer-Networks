@@ -99,19 +99,25 @@ int proxy(char *proxy_port) {
 	// - send request to resource
 	// - recv response from resource
 	// - write to client socket
-	size_t read_bytes = strlen(buff);
-	size_t bytes_sent = 0;
-	ssize_t send_bytes;
-	while(bytes_sent < read_bytes) {
-	  send_bytes = send(new_fd, buff + bytes_sent, read_bytes - bytes_sent, 0);
-	  if (send_bytes == -1) {
-            perror("send");
-	    close(new_fd);
-	    return 3;
-          }
-	  bytes_sent += send_bytes;
+	
+	//size_t read_bytes = strlen(buff);
+	//size_t bytes_sent = 0;
+	//ssize_t send_bytes;
+	//while(bytes_sent < read_bytes) {
+	//  send_bytes = send(new_fd, buff + bytes_sent, read_bytes - bytes_sent, 0);
+	//  if (send_bytes == -1) {
+        //    perror("send");
+	//    close(new_fd);
+	//    return 3;
+        //  }
+	//  bytes_sent += send_bytes;
+	//}
+	struct ParsedRequest *client_request = ParsedRequest_create();
+
+	if (ParsedRequest_parse(client_request, buff, strlen(buff)) == -1) {
+	  //TODO: Handle failed request parse
 	}
-	//ParsedRequest *client_request = ParsedRequest_create();
+        
         close(new_fd);
       }
       //handle killing child (process)

@@ -145,7 +145,7 @@ int proxy(char *proxy_port) {
       }
 
       struct ParsedRequest *client_request = ParsedRequest_create();
-      if (ParsedRequest_parse(client_request, buff, recv_bytes + 4) < 0) {
+      if (ParsedRequest_parse(client_request, buff, recv_bytes) < 0) {
         fprintf(stderr, "Failed to parse client request\n");
       }
       int proxy_fd;
@@ -208,7 +208,6 @@ int proxy(char *proxy_port) {
 	//}
       size_t proxy_req_len = get_request_length(proxy_buff, RECV_BUFFER_SIZE);
       proxy_buff[proxy_req_len] = '\0';
-      printf("Sending request: %s", proxy_buff);
       if (send(proxy_fd, proxy_buff, proxy_req_len, 0) == -1) {
         perror("send");
       }

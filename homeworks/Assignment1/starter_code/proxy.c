@@ -145,8 +145,8 @@ int proxy(char *proxy_port) {
       continue;
     }
 
-    pid = fork();
-    if (pid == 0) {
+    
+    if ((pid = fork()) == 0) {
       //handle the connecting client request
       char buff[RECV_BUFFER_SIZE];
       ssize_t recv_bytes;
@@ -258,9 +258,6 @@ int proxy(char *proxy_port) {
       close(proxy_fd);
       close(new_fd);
         
-    } else {
-      int status;
-      (void)waitpid(pid, &status, 0);
     }
     close(new_fd);
   }

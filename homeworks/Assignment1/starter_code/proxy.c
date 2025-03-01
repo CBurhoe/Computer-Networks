@@ -117,7 +117,20 @@ int proxy(char *proxy_port) {
 	if (ParsedRequest_parse(client_request, buff, strlen(buff)) == -1) {
 	  //TODO: Handle failed request parse
 	}
-        
+        //STUB: simple repeat of client request
+	// Set up proxy as client to remote server
+	int proxy_fd;
+	struct addrinfo proxy_hints, *remote_servinfo;
+	int rv;
+
+	memset(&proxy_hints, 0, sizeof proxy_hints);
+	proxy_hints.ai_family = AF_UNSPEC;
+	proxy_hints.ai_socktype = SOCK_STREAM;
+
+	//if ((rv = getaddrinfo(IP_ADDRESS, PORT, &proxy_hints, &remote_servinfo)) != 0) {
+	//  return 1;
+	//}
+
         close(new_fd);
       }
       //handle killing child (process)

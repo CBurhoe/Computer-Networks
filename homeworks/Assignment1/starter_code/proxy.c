@@ -272,17 +272,32 @@ int proxy(char *proxy_port) {
 	//TODO: handle remote response
 	char remote_buff[RECV_BUFFER_SIZE];
 	int numbytes = 0;
-	if ((numbytes = recv(proxy_fd, remote_buff, RECV_BUFFER_SIZE-1, 0)) == -1) {
-	  perror("recv");
-	  exit(1);
+
+	while ((numbytes = recv(proxy_fd, remote_buff, RECV_BUFFER_SIZE-1, 0)) > 0) {
+	  size_t chunk_sent = 0;
+	  ssize_t total_sent = 0;
+	  //TODO: send remote response to client
+	  while(total_sent < numbytes) {
+	    chunk_sent = send(new_fd, remote_buff + total_sent, numbytes - total_sent, 0);
+	    if (chunk_sent == -1) {
+	      if (errno == EINTR) {
+	        continue;
+	      }
+	      perror("client send");
+	      break;
+	    }
+	    total_sent += chunk_sent;
+	  }
+	  if (chunk_sent == -1) {
+	    break;
+	  }
 	}
-	//TODO: send remote response to client
-	if (send(new_fd, remote_buff, numbytes, 0) == -1) {
-	  perror("send");
+	if (numbytes == -1) {
+	  perror("remote server recv");
 	}
 	close(proxy_fd);
         close(new_fd);
-      
+        
     }
     close(new_fd);
   }

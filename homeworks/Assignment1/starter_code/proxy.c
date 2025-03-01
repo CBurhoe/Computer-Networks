@@ -71,6 +71,13 @@ int Prepare_request(struct ParsedRequest *pr, char *buf, size_t buflen) {
   return 0;
 }
 
+int Not_implemented(char *buf, int client_fd) {
+  memcpy(buf, "HTTP/1.0 501 Not Implemented\r\n", 30);
+  send(client_fd, buf, 30, 0);
+  return 0;
+}
+
+
 /* TODO: proxy()
  * Establish a socket connection to listen for incoming connections.
  * Accept each client request in a new process.
@@ -178,10 +185,14 @@ int proxy(char *proxy_port) {
       freeaddrinfo(remote_servinfo);
 	
       struct ParsedRequest *proxy_request = ParsedRequest_create();
+      char proxy_buff[RECV_BUFFER_SIZE];
       if (strcmp(client_request->method, "GET") != 0) {
         //TODO: return 5XX Not Implemented
+        Not_implemented(proxy_buff, new_fd);	
+	close(new_fd);
+	close(proxy_fd);
+	break;
       }
-      char proxy_buff[RECV_BUFFER_SIZE];
 
       proxy_request->method = strdup(client_request->method);
       proxy_request->path = strdup(client_request->path);

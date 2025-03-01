@@ -72,8 +72,14 @@ int Prepare_request(struct ParsedRequest *pr, char *buf, size_t buflen) {
 }
 
 int Not_implemented(char *buf, int client_fd) {
-  memcpy(buf, "HTTP/1.0 501 Not Implemented\r\n", 30);
-  send(client_fd, buf, 30, 0);
+  memcpy(buf, "HTTP/1.0 501 Not Implemented\r\n\r\n", 32);
+  send(client_fd, buf, 32, 0);
+  return 0;
+}
+
+int Bad_request(char *buf, int client_fd) {
+  memcpy(buf, "HTTP/1.0 400 Bad Request\r\n\r\n", 28);
+  send(client_fd, buf, 28, 0);
   return 0;
 }
 
@@ -153,7 +159,9 @@ int proxy(char *proxy_port) {
 
       struct ParsedRequest *client_request = ParsedRequest_create();
       if (ParsedRequest_parse(client_request, buff, recv_bytes) < 0) {
-        fprintf(stderr, "Failed to parse client request\n");
+        Bad_request(buff, new_fd);
+	close(new_fd);
+	continue;
       }
       int proxy_fd;
       struct addrinfo proxy_hints, *remote_servinfo;
@@ -191,7 +199,7 @@ int proxy(char *proxy_port) {
         Not_implemented(proxy_buff, new_fd);	
 	close(new_fd);
 	close(proxy_fd);
-	break;
+	continue;
       }
 
       proxy_request->method = strdup(client_request->method);

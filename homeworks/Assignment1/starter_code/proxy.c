@@ -122,8 +122,9 @@ int proxy(char *proxy_port) {
 	//  bytes_sent += send_bytes;
 	//}
 	struct ParsedRequest *client_request = ParsedRequest_create();
-	if (ParsedRequest_parse(client_request, buff, recv_bytes) == -1) {
+	if (ParsedRequest_parse(client_request, buff, recv_bytes) < 0) {
 	  //TODO: Handle failed request parse
+	  fprintf(stderr, "Failed to parse client request\n");
 	}
         //STUB: simple repeat of client request
 	// Set up proxy as client to remote server

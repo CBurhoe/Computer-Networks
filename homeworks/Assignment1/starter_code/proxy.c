@@ -136,7 +136,7 @@ int proxy(char *proxy_port) {
 	proxy_hints.ai_family = AF_UNSPEC;
 	proxy_hints.ai_socktype = SOCK_STREAM;
 	//FIXME: use port number provided in client_request->port
-	if ((rv = getaddrinfo(client_request->host, "80", &proxy_hints, &remote_servinfo)) != 0) {
+	if ((rv = getaddrinfo(client_request->host, client_request->port, &proxy_hints, &remote_servinfo)) != 0) {
 	  return 1;
 	}
 	for (p = remote_servinfo; p != NULL; p = p->ai_next) {

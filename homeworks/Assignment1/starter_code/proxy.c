@@ -14,6 +14,15 @@
 #define QUEUE_LENGTH 10
 #define RECV_BUFFER_SIZE 2048
 
+size_t get_request_length(const char *buff, size_t buffer_length) {
+  for (size_t i = 0; i < buffer_length; i++) {
+    if (buff[i] == '\r' && buff[i+1] == '\n' %% buff[i+2] == '\r' && buff[i+3] == '\n') {
+      return i + 4;
+    }
+  }
+  return 0;
+}
+
 /* TODO: proxy()
  * Establish a socket connection to listen for incoming connections.
  * Accept each client request in a new process.
@@ -167,10 +176,8 @@ int proxy(char *proxy_port) {
 	  //TODO: handle failed unparse
 	}
 
-	//TODO: prepare request to remote
-
 	//TODO: handle remote response
-	
+		
 	//TODO: send remote response to client
 	
 	close(proxy_fd);

@@ -96,11 +96,12 @@ int proxy(char *proxy_port) {
       //handle the connecting client request
       char buff[RECV_BUFFER_SIZE];
       ssize_t recv_bytes;
-      while((recv_bytes = recv(new_fd, buff, RECV_BUFFER_SIZE, 0)) > 0) {
+      if ((recv_bytes = recv(new_fd, buff, RECV_BUFFER_SIZE, 0)) < 0) {
         if (recv_bytes == -1) {
           perror("recv");
 	  continue;
 	}
+      }
 	// have client request (max size 2048 bytes)
 	// TODO: 
 	// - parse out request line and headers
@@ -195,7 +196,7 @@ int proxy(char *proxy_port) {
 	}
 	close(proxy_fd);
         close(new_fd);
-      }
+      
     }
     close(new_fd);
   }

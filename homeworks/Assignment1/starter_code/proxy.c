@@ -36,19 +36,7 @@ int Prepare_request(struct ParsedRequest *pr, char *buf, size_t buflen) {
   current[0]  = ' ';
   current += 1;
 
-//  memcpy(current, pr->protocol, strlen(pr->protocol));
-//  current += strlen(pr->protocol);
-//  memcpy(current, "://", 3);
-//  current += 3;
-//  memcpy(current, pr->host, strlen(pr->host));
-//  current += strlen(pr->host);
-//  if(pr->port != NULL)
-//  {
-//    current[0] = ':';
-//    current += 1;
-//    memcpy(current, pr->port, strlen(pr->port));
-//    current += strlen(pr->port);
-//  }
+
   memcpy(current, pr->path, strlen(pr->path));
   current += strlen(pr->path);
 
@@ -101,7 +89,6 @@ int proxy(char *proxy_port) {
   memset(&hints, 0, sizeof hints);
   hints.ai_family = AF_UNSPEC;
   hints.ai_socktype = SOCK_STREAM;
-  // hints.ai_flags = AI_PASSIVE;
 
   if ((status = getaddrinfo(NULL, proxy_port, &hints, &res)) != 0) {
     fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(status));
@@ -114,11 +101,6 @@ int proxy(char *proxy_port) {
       continue;
     }
 
-    //if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) {
-    //  perror("setsockopt");
-    //  exit(1);
-    //}
-    
     if (bind(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
       close(sockfd);
       perror("proxy: bind");
@@ -150,7 +132,6 @@ int proxy(char *proxy_port) {
       continue;
     }
 
-    // inet_ntop(their_addr.ss_family, get_in_addr((struct sockaddr *)&their_addr), s, sizeof s);
     
     if ((childpid = fork()) == 0) {
       //handle the connecting client request

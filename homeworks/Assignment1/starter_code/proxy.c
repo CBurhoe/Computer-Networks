@@ -122,8 +122,7 @@ int proxy(char *proxy_port) {
 	//  bytes_sent += send_bytes;
 	//}
 	struct ParsedRequest *client_request = ParsedRequest_create();
-
-	if (ParsedRequest_parse(client_request, buff, strlen(buff)) == -1) {
+	if (ParsedRequest_parse(client_request, buff, recv_bytes) == -1) {
 	  //TODO: Handle failed request parse
 	}
         //STUB: simple repeat of client request
@@ -135,7 +134,6 @@ int proxy(char *proxy_port) {
 	memset(&proxy_hints, 0, sizeof proxy_hints);
 	proxy_hints.ai_family = AF_UNSPEC;
 	proxy_hints.ai_socktype = SOCK_STREAM;
-	//FIXME: use port number provided in client_request->port
 	if ((rv = getaddrinfo(client_request->host, client_request->port, &proxy_hints, &remote_servinfo)) != 0) {
 	  return 1;
 	}
@@ -169,6 +167,7 @@ int proxy(char *proxy_port) {
 	proxy_request->protocol = client_request->protocol;
 	const char *host = "Host";
 	ParsedHeader_set(proxy_request, host, client_request->host);
+	ParsedRequest_destroy(client_request);
 	const char *connection_key = "Connection";
 	const char *connection_val = "close";
 	ParsedHeader_set(proxy_request, connection_key, connection_val);
@@ -179,6 +178,7 @@ int proxy(char *proxy_port) {
 	if (send(proxy_fd, buff, proxy_req_len, 0) == -1) {
 	  perror("send");
 	}
+	ParsedRequest_destroy(proxy_request);
 	//TODO: handle remote response
 	int numbytes = 0;
 	if ((numbytes = recv(proxy_fd, buff, RECV_BUFFER_SIZE-1, 0)) == -1) {

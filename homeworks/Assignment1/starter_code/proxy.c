@@ -126,7 +126,7 @@ int proxy(char *proxy_port) {
 	memset(&proxy_hints, 0, sizeof proxy_hints);
 	proxy_hints.ai_family = AF_UNSPEC;
 	proxy_hints.ai_socktype = SOCK_STREAM;
-
+	//FIXME: use port number provided in client_request->port
 	if ((rv = getaddrinfo(client_request->host, "80", &proxy_hints, &remote_servinfo)) != 0) {
 	  return 1;
 	}
@@ -150,12 +150,32 @@ int proxy(char *proxy_port) {
 	freeaddrinfo(remote_servinfo);
 	// proxy has successfully connected to remote server
 	
+	//TODO: parse client request
+	struct ParsedRequest *proxy_request = ParsedRequest_create();
+	if (strcmp(client_request->method, "GET") != 0) {
+	  //TODO: return 5XX Not Implemented
+	}
+	proxy_request->method = client_request->method;
+	proxy_request->path = client_request->path;
+	proxy_request->protocol = client_request->protocol;
+	const char *host = "Host";
+	ParsedHeader_set(proxy_request, host, client_request->host);
+	const char *connection_key = "Connection";
+	const char *connection_val = "close";
+	ParsedHeader_set(proxy_request, connection_key, connection_val);
+	if (!(ParsedRequest_unparse(proxy_request, buff, RECV_BUFFER_SIZE))) {
+	  //TODO: handle failed unparse
+	}
 
+	//TODO: prepare request to remote
 
+	//TODO: handle remote response
+	
+	//TODO: send remote response to client
+	
 	close(proxy_fd);
         close(new_fd);
       }
-      //handle killing child (process)
     }
     close(new_fd);
   }

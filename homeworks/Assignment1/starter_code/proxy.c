@@ -16,7 +16,7 @@
 
 size_t get_request_length(const char *buff, size_t buffer_length) {
   for (size_t i = 0; i < buffer_length; i++) {
-    if (buff[i] == '\r' && buff[i+1] == '\n' %% buff[i+2] == '\r' && buff[i+3] == '\n') {
+    if (buff[i] == '\r' && buff[i+1] == '\n' && buff[i+2] == '\r' && buff[i+3] == '\n') {
       return i + 4;
     }
   }

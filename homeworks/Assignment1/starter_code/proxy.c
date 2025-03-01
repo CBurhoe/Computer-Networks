@@ -127,10 +127,32 @@ int proxy(char *proxy_port) {
 	proxy_hints.ai_family = AF_UNSPEC;
 	proxy_hints.ai_socktype = SOCK_STREAM;
 
-	//if ((rv = getaddrinfo(IP_ADDRESS, PORT, &proxy_hints, &remote_servinfo)) != 0) {
-	//  return 1;
-	//}
+	if ((rv = getaddrinfo(client_request->host, "80", &proxy_hints, &remote_servinfo)) != 0) {
+	  return 1;
+	}
+	for (p = remote_servinfo; p != NULL; p->ai_next) {
+	  if ((proxy_fd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
+	    perror("proxy client: socket");
+	    continue;
+	  }
+	  if (connect(proxy_fd, p->ai_addr, p->ai_addrlen) == -1) {
+	    close(proxy_fd);
+	    perror("proxy client: connect");
+	    continue;
+	  }
+	  break;
+	}
+	if (p == NULL) {
+	  fprintf(stderr, "proxy client: failed to connect\n");
+	  return 2;
+	}
+	
+	freeaddrinfo(remote_servinfo);
+	// proxy has successfully connected to remote server
+	
 
+
+	close(proxy_fd);
         close(new_fd);
       }
       //handle killing child (process)

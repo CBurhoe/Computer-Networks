@@ -175,11 +175,20 @@ int proxy(char *proxy_port) {
 	if (!(ParsedRequest_unparse(proxy_request, buff, RECV_BUFFER_SIZE))) {
 	  //TODO: handle failed unparse
 	}
-
+	size_t proxy_req_len = get_request_length(buff, RECV_BUFFER_SIZE);
+	if (send(proxy_fd, buff, proxy_req_len, 0) == -1) {
+	  perror("send");
+	}
 	//TODO: handle remote response
-		
+	int numbytes = 0;
+	if ((numbytes = recv(proxy_fd, buff, RECV_BUFFER_SIZE-1, 0)) == -1) {
+	  perror("recv");
+	  exit(1);
+	}
 	//TODO: send remote response to client
-	
+	if (send(new_fd, buff, numbytes, 0) == -1) {
+	  perror("send");
+	}
 	close(proxy_fd);
         close(new_fd);
       }

@@ -162,141 +162,102 @@ int proxy(char *proxy_port) {
 	  continue;
 	}
       }
-	// have client request (max size 2048 bytes)
-	// TODO: 
-	// - parse out request line and headers
-	// - open connection to requested resource
-	// - send request to resource
-	// - recv response from resource
-	// - write to client socket
+
+      struct ParsedRequest *client_request = ParsedRequest_create();
+      if (ParsedRequest_parse(client_request, buff, recv_bytes + 4) < 0) {
+        fprintf(stderr, "Failed to parse client request\n");
+      }
+      int proxy_fd;
+      struct addrinfo proxy_hints, *remote_servinfo;
+      int rv;
+
+      memset(&proxy_hints, 0, sizeof proxy_hints);
+      proxy_hints.ai_family = AF_UNSPEC;
+      proxy_hints.ai_socktype = SOCK_STREAM;
+      if (client_request->port == NULL) {
+        client_request->port = "80";
+      }
+      if ((rv = getaddrinfo(client_request->host, client_request->port, &proxy_hints, &remote_servinfo)) != 0) {
+        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
+        return 1;
+      }
+      for (p = remote_servinfo; p != NULL; p = p->ai_next) {
+        if ((proxy_fd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
+          perror("proxy client: socket");
+          continue;
+        }
+
+        if (connect(proxy_fd, p->ai_addr, p->ai_addrlen) == -1) {
+          close(proxy_fd);
+          perror("proxy client: connect");
+          continue;
+        }
+        break;
+      }
+      freeaddrinfo(remote_servinfo);
 	
-	//size_t read_bytes = strlen(buff);
-	//size_t bytes_sent = 0;
-	//ssize_t send_bytes;
-	//while(bytes_sent < read_bytes) {
-	//  send_bytes = send(new_fd, buff + bytes_sent, read_bytes - bytes_sent, 0);
-	//  if (send_bytes == -1) {
-        //    perror("send");
-	//    close(new_fd);
-	//    return 3;
-        //  }
-	//  bytes_sent += send_bytes;
-	//}
-	buff[recv_bytes] = '\r';
-	buff[recv_bytes + 1] = '\n';
-	buff[recv_bytes + 2] = '\r';
-	buff[recv_bytes + 3] = '\n';
-	buff[recv_bytes + 4] = '\0';
-	printf("%s", buff);
-	struct ParsedRequest *client_request = ParsedRequest_create();
-	if (ParsedRequest_parse(client_request, buff, recv_bytes + 4) < 0) {
-	  //TODO: Handle failed request parse
-	  fprintf(stderr, "Failed to parse client request\n");
-	}
-	// Set up proxy as client to remote server
-	int proxy_fd;
-	struct addrinfo proxy_hints, *remote_servinfo;
-	int rv;
+      struct ParsedRequest *proxy_request = ParsedRequest_create();
+      if (strcmp(client_request->method, "GET") != 0) {
+        //TODO: return 5XX Not Implemented
+      }
+      char proxy_buff[RECV_BUFFER_SIZE];
 
-	memset(&proxy_hints, 0, sizeof proxy_hints);
-	proxy_hints.ai_family = AF_UNSPEC;
-	proxy_hints.ai_socktype = SOCK_STREAM;
-	if (client_request->port == NULL) {
-	  printf("Request port not specified, using default port 80.\n");
-	  client_request->port = "80";
-	}
-	if ((rv = getaddrinfo(client_request->host, client_request->port, &proxy_hints, &remote_servinfo)) != 0) {
-	  fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
-	  return 1;
-	}
-	for (p = remote_servinfo; p != NULL; p = p->ai_next) {
-	  if ((proxy_fd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
-	    perror("proxy client: socket");
-	    continue;
-	  }
+      proxy_request->method = strdup(client_request->method);
+      proxy_request->path = strdup(client_request->path);
+      proxy_request->version = strdup(client_request->version);
 
-	  printf("Attempting to connect to %s:%s...\n", client_request->host, client_request->port);
-	  if (connect(proxy_fd, p->ai_addr, p->ai_addrlen) == -1) {
-	    close(proxy_fd);
-	    perror("proxy client: connect");
-	    continue;
-	  }
-	  printf("successfully connected to remote server\n");
-	  break;
-	}
-	//if (p == NULL) {
-	//  fprintf(stderr, "proxy client: failed to connect\n");
-	//  return 2;
-	//}
-	printf("proxy successfully connected to remote server\n");
-	freeaddrinfo(remote_servinfo);
-	// proxy has successfully connected to remote server
-	
-	//TODO: parse client request
-	struct ParsedRequest *proxy_request = ParsedRequest_create();
-	if (strcmp(client_request->method, "GET") != 0) {
-	  //TODO: return 5XX Not Implemented
-	}
-	char proxy_buff[RECV_BUFFER_SIZE];
-
-	proxy_request->method = strdup(client_request->method);
-	proxy_request->path = strdup(client_request->path);
-	proxy_request->version = strdup(client_request->version);
-
-	const char *host = "Host";
-	if ((ParsedHeader_set(proxy_request, host, client_request->host)) != 0) {
-	  fprintf(stderr, "Failed to set Host header\n");
-	}
-	ParsedRequest_destroy(client_request);
-	const char *connection_key = "Connection";
-	const char *connection_val = "close";
-	if ((ParsedHeader_set(proxy_request, connection_key, connection_val)) != 0) {
-	  fprintf(stderr, "Failed to set Connection header\n");
-	}
-	if ((Prepare_request(proxy_request, proxy_buff, RECV_BUFFER_SIZE)) != 0) {
-	  fprintf(stderr, "Failed to convert ParsedRequest into string\n");
-	  return 1;
-	}
+      const char *host = "Host";
+      if ((ParsedHeader_set(proxy_request, host, client_request->host)) != 0) {
+        fprintf(stderr, "Failed to set Host header\n");
+      }
+      ParsedRequest_destroy(client_request);
+      const char *connection_key = "Connection";
+      const char *connection_val = "close";
+      if ((ParsedHeader_set(proxy_request, connection_key, connection_val)) != 0) {
+        fprintf(stderr, "Failed to set Connection header\n");
+      }
+      if ((Prepare_request(proxy_request, proxy_buff, RECV_BUFFER_SIZE)) != 0) {
+        fprintf(stderr, "Failed to convert ParsedRequest into string\n");
+        return 1;
+      }
 	//if ((ParsedRequest_unparse(proxy_request, proxy_buff, RECV_BUFFER_SIZE)) != 0) {
 	  //TODO: handle failed unparse
 	//  fprintf(stderr, "Failed to prepare send buffer\n");
 	  //return 1;
 	//}
-	size_t proxy_req_len = get_request_length(proxy_buff, RECV_BUFFER_SIZE);
-	proxy_buff[proxy_req_len] = '\0';
-	printf("Sending request: %s", proxy_buff);
-	if (send(proxy_fd, proxy_buff, proxy_req_len, 0) == -1) {
-	  perror("send");
-	}
-	ParsedRequest_destroy(proxy_request);
-	//TODO: handle remote response
-	char remote_buff[RECV_BUFFER_SIZE];
-	int numbytes = 0;
+      size_t proxy_req_len = get_request_length(proxy_buff, RECV_BUFFER_SIZE);
+      proxy_buff[proxy_req_len] = '\0';
+      printf("Sending request: %s", proxy_buff);
+      if (send(proxy_fd, proxy_buff, proxy_req_len, 0) == -1) {
+        perror("send");
+      }
+      ParsedRequest_destroy(proxy_request);
+      char remote_buff[RECV_BUFFER_SIZE];
+      int numbytes = 0;
 
-	while ((numbytes = recv(proxy_fd, remote_buff, RECV_BUFFER_SIZE-1, 0)) > 0) {
-	  size_t chunk_sent = 0;
-	  ssize_t total_sent = 0;
-	  //TODO: send remote response to client
-	  while(total_sent < numbytes) {
-	    chunk_sent = send(new_fd, remote_buff + total_sent, numbytes - total_sent, 0);
-	    if (chunk_sent == -1) {
-	      if (errno == EINTR) {
-	        continue;
-	      }
-	      perror("client send");
-	      break;
-	    }
-	    total_sent += chunk_sent;
-	  }
-	  if (chunk_sent == -1) {
-	    break;
-	  }
-	}
-	if (numbytes == -1) {
-	  perror("remote server recv");
-	}
-	close(proxy_fd);
-        close(new_fd);
+      while ((numbytes = recv(proxy_fd, remote_buff, RECV_BUFFER_SIZE-1, 0)) > 0) {
+        size_t chunk_sent = 0;
+        ssize_t total_sent = 0;
+        while(total_sent < numbytes) {
+          chunk_sent = send(new_fd, remote_buff + total_sent, numbytes - total_sent, 0);
+          if (chunk_sent == -1) {
+            if (errno == EINTR) {
+              continue;
+            }
+            perror("client send");
+            break;
+          }
+          total_sent += chunk_sent;
+        }
+        if (chunk_sent == -1) {
+          break;
+        }
+      }
+      if (numbytes == -1) {
+        perror("remote server recv");
+      }
+      close(proxy_fd);
+      close(new_fd);
         
     }
     close(new_fd);

@@ -162,31 +162,34 @@ int proxy(char *proxy_port) {
 	if (strcmp(client_request->method, "GET") != 0) {
 	  //TODO: return 5XX Not Implemented
 	}
-	proxy_request->method = client_request->method;
-	proxy_request->path = client_request->path;
-	proxy_request->protocol = client_request->protocol;
+	char proxy_buff[RECV_BUFFER_SIZE];
+
+	proxy_request->method = strdup(client_request->method);
+	proxy_request->path = strdup(client_request->path);
+	proxy_request->protocol = strdup(client_request->protocol);
 	const char *host = "Host";
 	ParsedHeader_set(proxy_request, host, client_request->host);
 	ParsedRequest_destroy(client_request);
 	const char *connection_key = "Connection";
 	const char *connection_val = "close";
 	ParsedHeader_set(proxy_request, connection_key, connection_val);
-	if (!(ParsedRequest_unparse(proxy_request, buff, RECV_BUFFER_SIZE))) {
+	if (!(ParsedRequest_unparse(proxy_request, proxy_buff, RECV_BUFFER_SIZE))) {
 	  //TODO: handle failed unparse
 	}
-	size_t proxy_req_len = get_request_length(buff, RECV_BUFFER_SIZE);
-	if (send(proxy_fd, buff, proxy_req_len, 0) == -1) {
+	size_t proxy_req_len = get_request_length(proxy_buff, RECV_BUFFER_SIZE);
+	if (send(proxy_fd, proxy_buff, proxy_req_len, 0) == -1) {
 	  perror("send");
 	}
 	ParsedRequest_destroy(proxy_request);
 	//TODO: handle remote response
+	char remote_buff[RECV_BUFFER_SIZE];
 	int numbytes = 0;
-	if ((numbytes = recv(proxy_fd, buff, RECV_BUFFER_SIZE-1, 0)) == -1) {
+	if ((numbytes = recv(proxy_fd, remote_buff, RECV_BUFFER_SIZE-1, 0)) == -1) {
 	  perror("recv");
 	  exit(1);
 	}
 	//TODO: send remote response to client
-	if (send(new_fd, buff, numbytes, 0) == -1) {
+	if (send(new_fd, remote_buff, numbytes, 0) == -1) {
 	  perror("send");
 	}
 	close(proxy_fd);

@@ -265,10 +265,6 @@ int proxy(char *proxy_port) {
       }
       close(proxy_fd);
       close(new_fd);
-      exit(0);
-        
-    } else {
-      waitpid(pid, NULL, 0);
     }
   }
   return 0;

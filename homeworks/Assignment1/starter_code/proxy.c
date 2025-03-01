@@ -22,6 +22,66 @@ size_t get_request_length(const char *buff, size_t buffer_length) {
   }
   return 0;
 }
+// Code modified from proxy_parse.c (various functions)
+int Prepare_request(struct ParsedRequest *pr, char *buf, size_t buflen) {
+  char * current = buf;
+
+//  if(buflen <  ParsedRequest_requestLineLen(pr))
+//  {
+//    fprintf(stderr, "not enough memory for first line\n");
+//    return -1;
+//  }
+  memcpy(current, pr->method, strlen(pr->method));
+  current += strlen(pr->method);
+  current[0]  = ' ';
+  current += 1;
+
+//  memcpy(current, pr->protocol, strlen(pr->protocol));
+//  current += strlen(pr->protocol);
+//  memcpy(current, "://", 3);
+//  current += 3;
+//  memcpy(current, pr->host, strlen(pr->host));
+//  current += strlen(pr->host);
+//  if(pr->port != NULL)
+//  {
+//    current[0] = ':';
+//    current += 1;
+//    memcpy(current, pr->port, strlen(pr->port));
+//    current += strlen(pr->port);
+//  }
+  memcpy(current, pr->path, strlen(pr->path));
+  current += strlen(pr->path);
+
+  current[0] = ' ';
+  current += 1;
+
+  memcpy(current, pr->version, strlen(pr->version));
+  current += strlen(pr->version);
+  memcpy(current, "\r\n", 2);
+  current += 2;
+
+  struct ParsedHeader * ph;
+  size_t i = 0;
+
+//  if (buflen < ParsedHeader_headersLen(pr)) {
+//    fprintf(stderr, "buffer for printing headers too small\n");
+//    return -1;
+//  }
+
+  while(pr->headersused > i) {
+    ph = pr->headers+i;
+    if (ph->key) {
+      memcpy(current, ph->key, strlen(ph->key));
+      memcpy(current+strlen(ph->key), ": ", 2);
+      memcpy(current+strlen(ph->key)+2, ph->value, strlen(ph->value));
+      memcpy(current+strlen(ph->key)+2+strlen(ph->value), "\r\n", 2);
+      current += strlen(ph->key)+strlen(ph->value)+4;
+    }
+    i++;
+  }
+  memcpy(current, "\r\n", 2);
+  return 0;
+}
 
 /* TODO: proxy()
  * Establish a socket connection to listen for incoming connections.
@@ -122,12 +182,17 @@ int proxy(char *proxy_port) {
         //  }
 	//  bytes_sent += send_bytes;
 	//}
+	buff[recv_bytes] = '\r';
+	buff[recv_bytes + 1] = '\n';
+	buff[recv_bytes + 2] = '\r';
+	buff[recv_bytes + 3] = '\n';
+	buff[recv_bytes + 4] = '\0';
+	printf("%s", buff);
 	struct ParsedRequest *client_request = ParsedRequest_create();
-	if (ParsedRequest_parse(client_request, buff, recv_bytes) < 0) {
+	if (ParsedRequest_parse(client_request, buff, recv_bytes + 4) < 0) {
 	  //TODO: Handle failed request parse
 	  fprintf(stderr, "Failed to parse client request\n");
 	}
-        //STUB: simple repeat of client request
 	// Set up proxy as client to remote server
 	int proxy_fd;
 	struct addrinfo proxy_hints, *remote_servinfo;
@@ -136,7 +201,12 @@ int proxy(char *proxy_port) {
 	memset(&proxy_hints, 0, sizeof proxy_hints);
 	proxy_hints.ai_family = AF_UNSPEC;
 	proxy_hints.ai_socktype = SOCK_STREAM;
+	if (client_request->port == NULL) {
+	  printf("Request port not specified, using default port 80.\n");
+	  client_request->port = "80";
+	}
 	if ((rv = getaddrinfo(client_request->host, client_request->port, &proxy_hints, &remote_servinfo)) != 0) {
+	  fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
 	  return 1;
 	}
 	for (p = remote_servinfo; p != NULL; p = p->ai_next) {
@@ -144,18 +214,21 @@ int proxy(char *proxy_port) {
 	    perror("proxy client: socket");
 	    continue;
 	  }
+
+	  printf("Attempting to connect to %s:%s...\n", client_request->host, client_request->port);
 	  if (connect(proxy_fd, p->ai_addr, p->ai_addrlen) == -1) {
 	    close(proxy_fd);
 	    perror("proxy client: connect");
 	    continue;
 	  }
+	  printf("successfully connected to remote server\n");
 	  break;
 	}
-	if (p == NULL) {
-	  fprintf(stderr, "proxy client: failed to connect\n");
-	  return 2;
-	}
-	
+	//if (p == NULL) {
+	//  fprintf(stderr, "proxy client: failed to connect\n");
+	//  return 2;
+	//}
+	printf("proxy successfully connected to remote server\n");
 	freeaddrinfo(remote_servinfo);
 	// proxy has successfully connected to remote server
 	
@@ -168,17 +241,30 @@ int proxy(char *proxy_port) {
 
 	proxy_request->method = strdup(client_request->method);
 	proxy_request->path = strdup(client_request->path);
-	proxy_request->protocol = strdup(client_request->protocol);
+	proxy_request->version = strdup(client_request->version);
+
 	const char *host = "Host";
-	ParsedHeader_set(proxy_request, host, client_request->host);
+	if ((ParsedHeader_set(proxy_request, host, client_request->host)) != 0) {
+	  fprintf(stderr, "Failed to set Host header\n");
+	}
 	ParsedRequest_destroy(client_request);
 	const char *connection_key = "Connection";
 	const char *connection_val = "close";
-	ParsedHeader_set(proxy_request, connection_key, connection_val);
-	if (!(ParsedRequest_unparse(proxy_request, proxy_buff, RECV_BUFFER_SIZE))) {
-	  //TODO: handle failed unparse
+	if ((ParsedHeader_set(proxy_request, connection_key, connection_val)) != 0) {
+	  fprintf(stderr, "Failed to set Connection header\n");
 	}
+	if ((Prepare_request(proxy_request, proxy_buff, RECV_BUFFER_SIZE)) != 0) {
+	  fprintf(stderr, "Failed to convert ParsedRequest into string\n");
+	  return 1;
+	}
+	//if ((ParsedRequest_unparse(proxy_request, proxy_buff, RECV_BUFFER_SIZE)) != 0) {
+	  //TODO: handle failed unparse
+	//  fprintf(stderr, "Failed to prepare send buffer\n");
+	  //return 1;
+	//}
 	size_t proxy_req_len = get_request_length(proxy_buff, RECV_BUFFER_SIZE);
+	proxy_buff[proxy_req_len] = '\0';
+	printf("Sending request: %s", proxy_buff);
 	if (send(proxy_fd, proxy_buff, proxy_req_len, 0) == -1) {
 	  perror("send");
 	}

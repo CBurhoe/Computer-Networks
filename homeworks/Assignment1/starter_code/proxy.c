@@ -205,14 +205,18 @@ int proxy(char *proxy_port) {
       proxy_request->method = strdup(client_request->method);
       proxy_request->path = strdup(client_request->path);
       if (strcmp(client_request->version, "HTTP/1.0") == 0) {
-        proxy_request->version = strdup(client_request->version);
-
-        const char *host = "Host";
+        proxy_request->version = strdup(client_request->version);  
+      } else {
+        proxy_request->version = "HTTP/1.0";
+      }
+      const char *host = "Host";
+      struct ParsedHeader *ph = ParsedHeader_get(client_request, host);
+      if (ph == NULL) {
         if ((ParsedHeader_set(proxy_request, host, client_request->host)) != 0) {
           fprintf(stderr, "Failed to set Host header\n");
         }
       } else {
-        proxy_request->version = "HTTP/1.0";
+        ParsedHeader_set(proxy_request, host, ph->value);
       }
       ParsedRequest_destroy(client_request);
       const char *connection_key = "Connection";

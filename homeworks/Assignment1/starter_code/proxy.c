@@ -266,6 +266,7 @@ int proxy(char *proxy_port) {
       close(proxy_fd);
       close(new_fd);
     }
+    close(new_fd);
   }
   return 0;
 }

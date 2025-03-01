@@ -139,7 +139,7 @@ int proxy(char *proxy_port) {
 	if ((rv = getaddrinfo(client_request->host, "80", &proxy_hints, &remote_servinfo)) != 0) {
 	  return 1;
 	}
-	for (p = remote_servinfo; p != NULL; p->ai_next) {
+	for (p = remote_servinfo; p != NULL; p = p->ai_next) {
 	  if ((proxy_fd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
 	    perror("proxy client: socket");
 	    continue;

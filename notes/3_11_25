@@ -1,0 +1,283 @@
+interdomain routing
+
+BGP (border gateway protocol)
+- interdomain routing
+- NOT for solving shortest path problem
+- announce reachability and enable policy based routing
+  - similar to link state routing, need to share what kind of conenctions you have
+  - doesn't share whole topology, but like hop-path(?) routing
+  - each autonomous network makes decision on whether to share info with their neighbors
+  - BGP announcement: IP prefix: [Attribute 0] [Attribute 1] [...]
+    - path vectors
+    - preference
+    - cost
+- stable paths problem
+  - policy based metrics
+  - local optimum
+
+how to avoid BGP instability
+- problem to determine whether an instance of a stable path problem is solvable is NP-complete
+- detecting conflicting policies
+  - CON: computationally expensive
+  - CON: requires too much cooperation
+- detecting oscillations
+  - observing the repetitive BGP routing messages
+  - CON: requires dynamic, stateful analysis
+- restricted routing policies and topologies
+  - policies based on business relationships
+
+
+AS (autonomous system) business relationship
+- managed by each network service provider
+- 16 bit ID
+  - each ISP given 1 ID
+
+Customer provider relationship
+- customer pays provider for access to internet
+  - provider exports its customer routes to everybody
+    - if anyone wants to access customer, they know they can access through provider
+  - customer exports provider routes only to its customer
+    - hierarchical downward flow
+    - all traffic from customer flows back to provider
+
+peer to peer relationship
+- ppeers exchange traffic between their customers (settlement-free)
+  - don't pay for traffic through the same tier - exchange traffic
+  - AS exports only customer routes to a peer
+  - AS exports a peer's routes only to its customer
+  - My peer's peer is not necessarily my peer
+
+hierarchical AS relationships
+- provider-customer graph is directed and acyclic
+  - if u is a customer of v and v is a customer of w, then w is not a customer of u
+
+local control, global stability: "gao-rexford conditions"
+- route export
+  - don't export routes learned from a peer or provider to another peer or provider
+- global topology
+  - provider-customer relationship is acyclic
+  - e.g. my customer's customer is not my customer
+- route selection
+  - prefer routes through customers over routes through peers and providers
+- guaranteed to converge to unique, stable solution
+
+
+how do we implement interdomain routing
+
+hierarchical AS relationships
+- provider-customer graph is directed and acyclic (DAG)
+  - if us is a customer of v, and v is a customer of w
+  - then w is not a customer of u
+
+selecting a best path
+- routing information base
+  - store all BGP routes for each destination prefix
+  - different operations for these entries
+  - withdraw: remove the route entry
+    - relationship doesn;t exist anymore
+  - announce: update route entry
+    - new or changed relationship
+- BGP decision process
+  - highest local preference
+  - shortest AS path
+  - closest egress point
+  - arbitrary tie break
+
+local preference
+- favor one path over another
+  - override the influence of AS path length
+- e.g.: prefer customer over peer (slide 13)
+
+
+import policy: filtering
+- discard some route announcements
+  - detect configuration mistakes and attacks
+- e.g. on session to a customer
+  - discard route if prefix not owned by the customer
+  - discard route with other large ISP in the AS path
+
+export policy: filtering
+- discard some route anouncements
+  - limit propagation of routing information
+- e.g.
+  - don't announce routes from one peer to another
+  - dont announce routes for management hosts
+
+export policy: attribute manipulation
+- modify attributes of the active route
+  - to influence the way other ASes behave
+- e.g.: AS prepending
+  - artificially inflate AS path length seen by others
+  - convince some ASes to send traffic another way
+
+reflect business relationships
+- common relationships
+  - customer provider
+  - peer-peer
+  - backup, siblings, ...
+- ISP terms
+  - tier 1 (~15 worldwide): no settlement or transit
+  - tier 2 ISPs: widespread peering, still buy transit
+- policies implementing in BGP, e.g.,
+  - import: ranking customer routes over peer routes
+  - export: export only customer routes to peers and providers
+
+BGP policy config
+- routing policy languages are vendor specific
+  - not part of BGP protocol spec
+  - different languages for cisco, juniper, etc
+- all languages share key features
+  - list of clauses matching on route attributes
+  - discarding or modifying matching routes
+- configuration done by human operators
+  - implementing the policies of their AS
+  - business relationships, traffic engineering, security
+
+
+how do backbone ASes operate
+
+
+backbone networks
+- multiple points of presence (PoPs)
+  - artificial demarcation network interface point between communicating entities
+- lots of communication between PoPs
+- accommodate traffic demands and limit delay
+
+internet2 backbone (slide 21)
+- network maintained by research and education communities
+- not-for-profit
+
+points of presence (PoPs)
+- intra-PoP links
+  - short cables between racks or floors
+  - aggregated bandwidth
+- inter-PoP links
+  - long distances
+  - high bandwidth
+- links to other networks
+  - wide range of media and bandwidth
+
+where to locate nodes and links
+- placing points of presence (PoPs)
+  - large population of potential customers
+  - other providers or exchange points
+  - cost and availability of real-estate
+  - usually in major metropolitan areas
+    - old rule: NFL cities in the US
+- placing links between PoPs
+  - already fiber in the ground
+  - needed to limit propagation delay
+  - needed to handle the traffic load
+
+
+peering
+- exchange traffic between customer
+  - settlement-free
+- diverse peering locations
+  - both coasts, middle
+- comparable capacity at all peering points
+  - can handle even load
+
+
+combining intradomain and interdomain routing
+
+intradomain routing
+- compute shortest paths between routers
+  - router C takes path C-F-A (slide 26)
+- using link-state routing protocols
+  - e.g. OSPF, IS-IS
+
+interdomain routing
+- learn paths to remote destinations
+  - AS1 learns two paths to AS5 (slide 27)
+- applies local policies to select a best route
+
+An AS is not a single node
+- multiple routers in an AS
+  - need to distribute BGP info within the AS
+  - internal BGP (iBGP) sessions between routers
+
+iBGP and local preference
+- both routers prefer path throuhgh AS 1 (slide 29)
+  - even though right router learns external path
+
+hot-potato (early exit) routing
+- hot-potato
+  - each router selects the closest egress point
+  - closest based on path cost in intradomain protocol
+- BGP decision process
+  - highest local preference
+  - shortest AS path
+  - closest egress point
+  - arbitrary tie break
+- selfish routing
+  - each provider dumps traffic on the other
+  - as early as possible
+- asymmetric routing
+  - traffic does not flow on the same path in both directions
+
+joining BGP and IGP information
+- border gateway protocol
+  - announces reachability to external dests
+  - maps a dest prefix to an egress point
+    - 128.220.0.0/16 reached via 192.0.2.1 (slide 32)
+- interior gateway protocol
+  - used to compute paths within the AS
+  - maps an egress point to an outgoing link
+    - 192.0.2.1 reached via 10.10.10.10 (slide 32)
+
+
+
+backbone traffic engineering
+
+routing with static link weights
+- routers flood info to learn topology
+  - determin next hop to reach other routers
+  - compute shortest paths based on link weights
+- link weights configured by network operator
+
+setting link weights
+- how to set the link weights
+  - inversely proportional to link capacity?
+  - proportional to propagation delay?
+  - network wide optimization based on traffic?
+
+measure, model, control
+
+operational network
+- measure
+  - topology, configuration
+  - offered traffic
+- control
+  - changes to network
+- model
+  - something in slide 37
+
+
+limitations of shortest path routing
+- sub-optimal traffic engineering
+  - restricted to paths expressible as link weights
+- limited use of multiple paths
+  - only equal-cost multi-path, with even splitting
+- disruptions when changing link wiehgts
+  - transient packet loss and delay, and out-of-order
+- slow adaptation to congestion
+  - network-wide re-optimization and configuration
+- overhead of the management system
+
+
+constrained shortest path first
+- run a link-state routing protocol
+  - configurable link weights
+  - plus other metrics like available bandwith
+- constrained hortest path computation
+  - prune unwanted links
+  - compute shortest path on remaining graph
+
+conclusions
+- interdomain routing
+  - business relaitonships reflected in interdomain routing, leads to more stable paths
+- backbone networks
+  - transit services for customers
+  - combine inter and intra domain routing
+  - glue that holds the internet together

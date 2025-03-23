@@ -82,6 +82,9 @@ void sr_handlepacket(struct sr_instance* sr,
   if (ethertype(packet) == ethertype_arp) {
     //TODO: handle arp packet
   } else if (ethertype(packet) == ethertype_ip) {
+    if (cksum(packet, packet->len) != packet->checksum) {
+      //TODO: handle bad checksum
+    }
     //TODO: handle ip packet
   }
 

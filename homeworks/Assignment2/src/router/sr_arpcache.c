@@ -18,10 +18,42 @@
 */
 void sr_arpcache_sweepreqs(struct sr_instance *sr) {
     /* fill in code here */
+    for (struct sr_arpreq *request = sr->cache.requests; request != nullptr; request = request->next) {
+      struct sr_arpreq *tmp = request->next;
+      handle_arpreq(sr, request);
+      if (request == nullptr) {
+
+      }
+    }
 }
 
 void handle_arpreq(struct sr_instance *sr, struct sr_arpreq *request) {
     /* fill in code here */
+    /*
+    if difftime(now, req->sent) > 1.0
+           if req->times_sent >= 5:
+               send icmp host unreachable to source addr of all pkts waiting
+                 on this request
+               arpreq_destroy(req)
+           else:
+               send arp request
+               req->sent = now
+               req->times_sent++
+     */
+    if(difftime(time(NULL), request->sent) > 1.0) {
+      if (request->times_sent >= 5) {
+        struct sr_icmp_t3_hdr *host_unreachable = (struct sr_icmp_t3_hdr *)malloc(sizeof(struct sr_icmp_t3_hdr));
+        host_unreachable->icmp_type = 3;
+        host_unreachable->icmp_code = 1;
+        host_unreachable->icmp_sum = NULL; //FIXME: calculate checksum
+        //TODO: construct the ethernet frame and send to all packet sources
+        sr_arpreq_destroy(&sr->cache, request);
+      } else {
+        //TODO: send arp request
+        request->sent = time(NULL);
+        request->times_sent++;
+      }
+    }
 }
 
 /* You should not need to touch the rest of this code. */

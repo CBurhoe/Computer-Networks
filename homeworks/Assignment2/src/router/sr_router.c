@@ -79,6 +79,11 @@ void sr_handlepacket(struct sr_instance* sr,
   printf("*** -> Received packet of length %d \n",len);
 
   /* fill in code here */
+  if (ethertype(packet) == ethertype_arp) {
+    //TODO: handle arp packet
+  } else if (ethertype(packet) == ethertype_ip) {
+    //TODO: handle ip packet
+  }
 
 } /* end sr_handlepacket */
 

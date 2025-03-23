@@ -18,12 +18,10 @@
 */
 void sr_arpcache_sweepreqs(struct sr_instance *sr) {
     /* fill in code here */
-    for (struct sr_arpreq *request = sr->cache.requests; request != nullptr; request = request->next) {
+    for (struct sr_arpreq *request = sr->cache.requests; request != nullptr; request = request) {
       struct sr_arpreq *tmp = request->next;
       handle_arpreq(sr, request);
-      if (request == nullptr) {
-
-      }
+      request = tmp;
     }
 }
 

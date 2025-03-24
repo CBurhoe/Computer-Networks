@@ -87,8 +87,9 @@ void sr_handlepacket(struct sr_instance* sr,
   } else if (ethertype(packet) == ethertype_ip) {
     struct sr_ip_hdr packet_ip_hdr;
     memcpy(&packet_ip_hdr, packet + sizeof(packet_eth_hdr), sizeof(packet_ip_hdr));
-    //TODO: find end of ethernet header; overlay onto sr_ip_hdr to access ip_len and ip_sum (sr_protocol.h)
-    if (cksum(packet, len) != packet_ip_hdr.ip_sum) {
+
+    //FIXME: not sure how IP checksum works, need to figure out if ip_len or ip_hl should be used in cksum
+    if (cksum(&packet_ip_hdr, packet_ip_hdr.ip_len) != packet_ip_hdr.ip_sum) {
       //TODO: handle bad checksum
     }
 

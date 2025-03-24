@@ -115,6 +115,9 @@ void sr_handlepacket(struct sr_instance* sr,
       //TODO: handle packet destined for this interface
     } else {
       packet_ip_hdr.ip_ttl--;
+      if (packet_ip_hdr.ip_ttl <= 0) {
+        //TODO: send ICMP time exceeded type 11
+      }
       packet_ip_hdr.ip_sum = cksum(&packet_ip_hdr, sizeof(packet_ip_hdr));
       //TODO: forward packet to dst
     }

@@ -91,6 +91,10 @@ void sr_handlepacket(struct sr_instance* sr,
     if (cksum(packet, len) != packet_ip_hdr.ip_sum) {
       //TODO: handle bad checksum
     }
+
+    if (packet_ip_hdr.ip_len < packet_ip_hdr.ip_hl) {
+      //TODO: handle bad length
+    }
     //TODO: handle ip packet
   }
 

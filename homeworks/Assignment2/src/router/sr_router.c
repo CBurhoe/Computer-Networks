@@ -89,9 +89,7 @@ void sr_handlepacket(struct sr_instance* sr,
 
     if (packet_arp_hdr.ar_op == arp_op_request) {
       //TODO: handle ARP request
-    }
-
-    if (packet_arp_hdr.ar_op == arp_op_reply) {
+    } else if (packet_arp_hdr.ar_op == arp_op_reply) {
       //TODO: handle ARP reply
     }
 

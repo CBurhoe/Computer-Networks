@@ -114,6 +114,7 @@ void sr_handlepacket(struct sr_instance* sr,
     if (sr_get_interface(sr, interface) == get_interface_from_ip(sr, packet_ip_hdr.ip_dst)) {
       //TODO: handle packet destined for this interface
     } else {
+      packet_ip_hdr.ip_ttl--;
       //TODO: forward packet to dst
     }
   }

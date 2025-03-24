@@ -78,11 +78,14 @@ void sr_handlepacket(struct sr_instance* sr,
 
   printf("*** -> Received packet of length %d \n",len);
 
+  struct sr_ethernet_hdr packet_hdr;
+  memcpy(&packet_hdr, packet, sizeof(packet_hdr));
+
   /* fill in code here */
   if (ethertype(packet) == ethertype_arp) {
     //TODO: handle arp packet
   } else if (ethertype(packet) == ethertype_ip) {
-    if (cksum(packet, packet->len) != packet->checksum) {
+    if (cksum(packet, len) != packet->checksum) {
       //TODO: handle bad checksum
     }
     //TODO: handle ip packet

@@ -84,6 +84,17 @@ void sr_handlepacket(struct sr_instance* sr,
   /* fill in code here */
   if (ethertype(packet) == ethertype_arp) {
     //TODO: handle arp packet
+    struct sr_arp_hdr packet_arp_hdr;
+    memcpy(&packet_arp_hdr, packet + sizeof(packet_eth_hdr), sizeof(packet_arp_hdr));
+
+    if (packet_arp_hdr.ar_op == arp_op_request) {
+      //TODO: handle ARP request
+    }
+
+    if (packet_arp_hdr.ar_op == arp_op_reply) {
+      //TODO: handle ARP reply
+    }
+
   } else if (ethertype(packet) == ethertype_ip) {
     struct sr_ip_hdr packet_ip_hdr;
     memcpy(&packet_ip_hdr, packet + sizeof(packet_eth_hdr), sizeof(packet_ip_hdr));
@@ -96,7 +107,8 @@ void sr_handlepacket(struct sr_instance* sr,
     if (packet_ip_hdr.ip_len < packet_ip_hdr.ip_hl) {
       //TODO: handle bad length
     }
-    //TODO: handle ip packet
+
+    //TODO: handle good ip packet
   }
 
 } /* end sr_handlepacket */

@@ -102,7 +102,12 @@ void sr_handlepacket(struct sr_instance* sr,
       //TODO: handle bad checksum
     }
 
-    if (packet_ip_hdr.ip_len < packet_ip_hdr.ip_hl) {
+	/*
+	ip_len: packet len in bytes;
+	ip_hl: header len in words (4 byte words);
+	multiply ip_hl by 4 to get header length in bytes
+	*/
+    if (packet_ip_hdr.ip_len < (packet_ip_hdr.ip_hl * 4)) {
       //TODO: handle bad length
     }
 

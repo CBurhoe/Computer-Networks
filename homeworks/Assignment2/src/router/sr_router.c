@@ -111,6 +111,7 @@ void sr_handlepacket(struct sr_instance* sr,
       //TODO: handle bad length
     }
 
+    //FIXME: may need to check other interfaces on this router
     if (sr_get_interface(sr, interface) == get_interface_from_ip(sr, packet_ip_hdr.ip_dst)) {
       //TODO: handle packet destined for this interface
     } else {

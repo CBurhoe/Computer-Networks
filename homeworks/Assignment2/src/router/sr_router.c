@@ -119,7 +119,12 @@ void sr_handlepacket(struct sr_instance* sr,
       if (packet_ip_hdr->ip_ttl <= 0) {
         //TODO: send ICMP time exceeded type 11
       }
-      packet_ip_hdr->ip_sum = cksum(&packet_ip_hdr, sizeof(packet_ip_hdr));
+      packet_ip_hdr->ip_sum = 0;
+      packet_ip_hdr->ip_sum = cksum(packet_ip_hdr, sizeof(struct sr_ip_hdr));
+      struct sr_rt *longest_match = sr_longest_prefix_match(sr, packet_ip_hdr->ip_dst);
+      if (longest_match == NULL) {
+        //TODO: handle no longest prefix match
+      }
       //TODO: forward packet to dst
     }
   }

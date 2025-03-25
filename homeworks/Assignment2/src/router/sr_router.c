@@ -133,3 +133,21 @@ them in sr_router.h.
 If you use any of these methods in sr_arpcache.c, you must also forward declare
 them in sr_arpcache.h to avoid circular dependencies. Since sr_router
 already imports sr_arpcache.h, sr_arpcache cannot import sr_router.h -KM */
+
+struct sr_rt *sr_longest_prefix_match(struct sr_instance *sr, uint32_t dest_ip) {
+  struct sr_rt* rt_walker = sr->routing_table;
+  struct sr_rt* longest_prefix_match = NULL;
+  uint32_t longest_mask = 0;
+
+  while(rt_walker) {
+    if ((dest_ip & rt_walker->mask.s_addr) == rt_walker->dest.s_addr) {
+      if (ntohl(rt_walker->mask.s_addr) > ntohl(longest_mask)) {
+        longest_mask = rt_walker->mask.s_addr;
+        longest_prefix_match = rt_walker;
+      }
+    }
+    rt_walker = rt_walker->next;
+  }
+  return longest_prefix_match;
+
+}

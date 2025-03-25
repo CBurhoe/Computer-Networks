@@ -98,7 +98,7 @@ void sr_handlepacket(struct sr_instance* sr,
 //    memcpy(&packet_ip_hdr, packet + sizeof(packet_eth_hdr), sizeof(packet_ip_hdr));
 
     //FIXME: not sure how IP checksum works, need to figure out if ip_len or ip_hl should be used in cksum
-    if (cksum(&packet_ip_hdr, sizeof(packet_ip_hdr)) != packet_ip_hdr.ip_sum) {
+    if (cksum(&packet_ip_hdr, sizeof(packet_ip_hdr)) != packet_ip_hdr->ip_sum) {
       //TODO: handle bad checksum
     }
 
@@ -107,19 +107,19 @@ void sr_handlepacket(struct sr_instance* sr,
 	ip_hl: header len in words (4 byte words);
 	multiply ip_hl by 4 to get header length in bytes
 	*/
-    if (packet_ip_hdr.ip_len < (packet_ip_hdr.ip_hl * 4)) {
+    if (packet_ip_hdr->ip_len < (packet_ip_hdr->ip_hl * 4)) {
       //TODO: handle bad length
     }
 
     //FIXME: may need to check other interfaces on this router
-    if (sr_get_interface(sr, interface) == get_interface_from_ip(sr, packet_ip_hdr.ip_dst)) {
+    if (sr_get_interface(sr, interface) == get_interface_from_ip(sr, packet_ip_hdr->ip_dst)) {
       //TODO: handle packet destined for this interface
     } else {
-      packet_ip_hdr.ip_ttl--;
-      if (packet_ip_hdr.ip_ttl <= 0) {
+      packet_ip_hdr->ip_ttl--;
+      if (packet_ip_hdr->ip_ttl <= 0) {
         //TODO: send ICMP time exceeded type 11
       }
-      packet_ip_hdr.ip_sum = cksum(&packet_ip_hdr, sizeof(packet_ip_hdr));
+      packet_ip_hdr->ip_sum = cksum(&packet_ip_hdr, sizeof(packet_ip_hdr));
       //TODO: forward packet to dst
     }
   }

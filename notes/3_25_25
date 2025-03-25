@@ -1,0 +1,212 @@
+midterm 2: lecture 8 to now
+- focus on shortest path stuff
+- different policies and their effect on outcome
+
+
+
+anycast and multicast
+
+
+unicast: one to one
+
+broadcast: one to all
+
+anycast: one to one, but from a number of possible recipients
+
+multicast: one to many, but from a subset of possible recipients
+
+
+overview
+- IP anycast
+  - N destinations, 1 should receive message
+  - providing a service from multiple network locations
+  - using routing protocols for automated failover
+- multicast protocols
+  - N destinations, N should receive the message
+  - e.g.
+    - IP multicast
+    - SRM
+    - PGM
+
+
+anycast
+
+limitations of DNS-based failover
+- failover/load balancing via multiple A records
+- if server fails, service unavailable for DNS TTL
+  - very low TTL: extra load on DNS
+  - browsers cache DNS mappings
+
+motivation for IP Anycast
+- failure problem: client has resolved IP address
+  - what if IP address can represent many servers?
+- load balancing/failover via IP address, rather than DNS
+- IP anycast is simple reuse of existing protocols
+  - multiple instances of a service share same IP address
+  - each instance announces IP address/prefix in BGP/IGP
+  - routing infrastructure directs packets to nearest instance of the service
+    - can use same selection criteria as installing routes in the FIB
+  - no special capabilities in servers, clients, or networks
+    - the only difference is that multiple instances of the server all use the same IP address
+    - so the one with the shortest path has requesting traffic directed to it
+    - if one path fails, send traffic to next shortest path one
+
+anycast limitations
+- many tier-1 ISPs filter ingress prefixes longer than /24
+  - publish a /24 to get a "single" anycasted address - poor utilization
+- scales poorly with the number of anycast groups
+  - each group needs entry in the global routing table
+- not trivial to deploy
+  - obtain IP prefix and AS number, speak BGP, multiple servers/sites
+- subject to limitations of IP routing
+  - no notion of load or other applicaiton layer metrics
+  - convergence depends on routing protocol
+  - not always optimal routing for latency and bandwidth
+- failover disrupts active TCP flows (TCP is stateful)
+  - may react to network changes, even if server online
+
+
+anycast in practice
+- root nameservers (DNS) anycasted
+  - letter.root-servers.net
+- CDNs anycast "edge" DNS nameservers
+  - even DNS over HTTPS
+- clouds anycast virtual machine IP addresses
+  - get traffic into the cloud WAN quickly; e.g. AWS global accelerator
+- distributed denial of service mitigation
+  - anycast server IP addresses from scrubbing centers
+  - move scrubbing close to source
+
+
+multicast
+- many receivers
+  - receiving same content
+- applications
+  - video conferences, streaming
+  - online gaming
+  - IP television (IPTV)
+  - financial data feeds
+
+iterated unicast
+- unicast message to each recipient
+- advantages
+  - simple to implement
+  - no modifications to network
+- disadvantages
+  - high overhead on sender
+  - redundant packets on links
+  - sender must maintain list of receivers
+
+  IP multicast
+  - embed receiver driven tree in network layer
+    - sender sends a single packet to the group
+    - receivers "join" and "leave" the tree
+  - advantages
+    - low overhead on the sender
+    - avoids redundant network traffic
+  - disadvantages
+    - control-plane protocols for multicast groups
+    - overhead of duplicating packets on the routers
+
+note: predefined multicast IP addresses
+  - e.g. 224.x.x.x
+  - this tells the router that if a dst IP address for a packet uses a multicast address, it should be duplicating/forwarding to ALL addresses, not just shortest path
+
+
+single vs multiple senders
+- source based tree
+  - separate tree for each sender
+  - tree optimized for that sender
+  - requires multiple trees for multiple senders
+- shared tree
+  - one common tree
+  - spanning tree that reaches all participants
+  - single tree may be inefficient
+  - avoids having many different trees
+
+multicast addresses
+- multicast group defined by IP address
+  - multicast addresses look like unicast addresses
+  - reserved multicast range - 224.0.0.0 to 239.255.255.255
+- using multicast IP addresses
+  - sender send to the iP address
+  - (see slide 24)
+
+
+IGMP v1 (IP Gorup Management Protocol)
+- two types of IGMP messages (both have IP TTL of 1)
+  - host membership query
+    - routers query local networks to discover which groups have members
+  - host membership report
+    - hosts report each group (e.g. multicast address) they belong to
+    - send over network interface that brought the query
+- routers maintain group membership
+  - host sends IGMP report to join a group
+  - multicast routers periodically issue host membership query to determine liveness of group members
+  - note: no explicit "leave" message from clients
+    - just have to let it expire and don't send report in response to query
+
+IGMP Improvements
+- IGMP v2 added
+  - if multiple routers, one with lowest IP elected querier
+  - explicit leave messages for faster pruning
+- v3
+  - (see slide 27)
+
+IP multicast is best effort
+- sender sends packet to IP multicast address
+  - loss may affect multiple receivers
+
+
+challenges for reliable multicast
+- send an ACK like TCP
+  - ACK-implosion if all destinations ACK at once
+  - source does not know number of destinations
+- how to retransmit
+  - to all? one bad link effects entire group
+  - only where losses? loss near sender makes retransmission as inefficient as replicated unicast
+- negative acknowledgements (NAK) more common
+
+Scalable reliable multicast (SRM)
+- data packets sent via IP multicast
+  - data includes sequence numbers
+- upon packet failure
+  - if failures are relatively rare, use NAKs instead
+    - did not receive an unexpected packet
+  - sender issues heartbeats if no real traffic
+    - the receiver known when to expect the packet (and can NAK)
+
+handling failure in SRM
+- receiver multicasts a NAK
+  - or send NAK to sender, who multicasts confirmation
+- scale through NAK suppression
+  - if received a NAK, don't NAK yourself
+  - add random delays before NAKing (similar to random backoff in MAC)
+- repair through packet retransmission
+  - from initial sender
+  - from designated local repairer
+
+
+pragmatic general multicast (PGM) (RFC 3208)
+- similar approach as SRM: IP multicast + NAKs
+  - but more techniques for scalability
+- hierarchy of PGM-aware network elements
+  - NAK suppression- similar to SRM
+  - NAK elimination- send at most one NAK upstream
+    - or completely handle with local repair
+  - constrained forwarding- repair data can be suppressed downstream if no NAK seen on that port
+  - forward error correction: reduce need to NAK
+- works when only sender is multicast capable
+  - receiver does not need to multicast NAK
+
+conclusion
+- anycast
+  - multiple servers share same IP address
+  - networks routers handle data forwarding
+  - advertise IP address into routing protocols (e.g. BGP)
+  - clients connect to "closest" server
+- multicast
+  - send to one IP address but multiple listeners
+  - network constructs multicast tree to listeners (similar to spanning tree)
+  - network does the work
+

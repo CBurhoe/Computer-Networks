@@ -133,8 +133,14 @@ void sr_handlepacket(struct sr_instance* sr,
 
       memcpy(packet_eth_hdr->ether_shost, iface->addr, ETHER_ADDR_LEN);
 
+      struct sr_arpentry *arp_entry = sr_arpcache_lookup(&sr->cache, next_hop_addr);
+      if (arp_entry == NULL) {
+        //TODO: queue arp request
+      }
 
+      memcpy(packet_eth_hdr->ether_dhost, arp_entry->mac, ETHER_ADDR_LEN);
 
+      sr_send_packet(sr, packet, len, longest_match->interface); //FIXME: no idea if args are correct
       //TODO: forward packet to dst
     }
   }

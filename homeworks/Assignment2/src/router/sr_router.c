@@ -125,6 +125,15 @@ void sr_handlepacket(struct sr_instance* sr,
       if (longest_match == NULL) {
         //TODO: handle no longest prefix match
       }
+      uint32_t next_hop_addr = longest_match->gw.s_addr; //FIXME: not sure why gateway is used instead of dest
+      if (next_hop_addr == 0) {
+        next_hop_addr = packet_ip_hdr->ip_dst; //FIXME: what does this mean???
+      }
+      struct sr_if *iface = sr_get_interface(sr, longest_match->interface);
+
+      memcpy(packet_eth_hdr->ether_shost, iface->addr, ETHER_ADDR_LEN);
+
+
 
       //TODO: forward packet to dst
     }

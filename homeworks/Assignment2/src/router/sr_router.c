@@ -141,7 +141,6 @@ void sr_handlepacket(struct sr_instance* sr,
       memcpy(packet_eth_hdr->ether_dhost, arp_entry->mac, ETHER_ADDR_LEN);
 
       sr_send_packet(sr, packet, len, longest_match->interface); //FIXME: no idea if args are correct
-      //TODO: forward packet to dst
     }
   }
 

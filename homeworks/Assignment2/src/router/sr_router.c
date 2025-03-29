@@ -199,7 +199,27 @@ void send_icmp_packet(struct sr_instance* sr,
     //TODO: determine length
   }
   uint8_t * icmp_packet = malloc(len);
+  struct sr_ethernet_hdr *new_packet_eth_hdr = (struct sr_ethernet_hdr *)icmp_packet;
+  struct sr_ethernet_hdr *packet_eth_hdr = (struct sr_ethernet_hdr *)packet;
+  struct sr_ip_hdr *new_packet_ip_hdr = (struct sr_ip_hdr *)(icmp_packet + sizeof(sr_ethernet_hdr_t));
+  struct sr_ip_hdr *packet_ip_hdr = (struct sr_ip_hdr *)(packet + sizeof(sr_ethernet_hdr_t));
+  struct sr_icmp_hdr *new_packet_icmp_hdr = (struct sr_icmp_hdr *)(icmp_packet + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t));
+  struct sr_icmp_hdr *packet_icmp_hdr = (struct sr_icmp_hdr *)(packet + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t));
 
+  memcpy(new_packet_eth_hdr->ether_dhost, packet_eth_hdr->ether_shost, ETHER_ADDR_LEN);
+  memcpy(new_packet_eth_hdr->ether_shost, sr_get_interface(sr, interface)->addr, ETHER_ADDR_LEN);
+  new_packet_eth_hdr->ether_type = ethertype_ip;
+
+  memcpy(new_packet_ip_hdr, packet_ip_hdr, sizeof(sr_ip_hdr_t));
+  new_packet_ip_hdr->ip_len = len - sizeof(sr_ethernet_hdr_t);
+  if (type != 0) {
+    new_packet_ip_hdr->ip_off = IP_DF;
+  }
+  new_packet_ip_hdr->ip_ttl = 255;
+  new_packet_ip_hdr->ip_p = ip_protocol_icmp;
+  new_packet_ip_hdr->ip_sum = 0;
+  new_packet_ip_hdr->ip_src = sr_get_interface(sr, interface)->ip; //FIXME: may have to set to another interface on the router
+  new_packet_ip_hdr->ip_dst = packet_ip_hdr->ip_src;
 }
 
 struct sr_rt *sr_longest_prefix_match(struct sr_instance *sr, uint32_t dest_ip) {

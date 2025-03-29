@@ -44,10 +44,8 @@ void handle_arpreq(struct sr_instance *sr, struct sr_arpreq *request) {
         while(packet) {
           send_icmp_packet(sr, packet->buf, packet->len, packet->iface, 3, 1);
         }
-        //TODO: construct the ethernet frame and send to all packet sources
         sr_arpreq_destroy(&sr->cache, request);
       } else {
-        //TODO: send arp request
         send_arpreq(sr, sizeof(sr_ethernet_hdr_t) + sizeof(sr_arp_hdr_t), get_interface_from_ip(sr, request->ip)->name, request); //FIXME: no idea if this is the right interface...
         request->sent = time(NULL);
         request->times_sent++;

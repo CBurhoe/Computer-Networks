@@ -233,7 +233,9 @@ void send_icmp_packet(struct sr_instance* sr,
   }
   new_packet_icmp_hdr->icmp_sum = cksum(new_packet_icmp_hdr, sizeof(sr_icmp_hdr_t));
 
+  sr_send_packet(sr, icmp_packet, len, interface); //FIXME: sending interface might be different from receiving interface
 
+  free(icmp_packet);
 }
 
 struct sr_rt *sr_longest_prefix_match(struct sr_instance *sr, uint32_t dest_ip) {

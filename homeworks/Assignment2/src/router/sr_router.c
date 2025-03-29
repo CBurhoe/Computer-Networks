@@ -191,7 +191,7 @@ void send_icmp_packet(struct sr_instance* sr,
   - determine length (if type 0/echo, same length, else based on headers used)
    */
   if (type != 0) {
-    //TODO: determine length
+    len = sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_hdr_t);
   }
   uint8_t * icmp_packet = malloc(len);
   struct sr_ethernet_hdr *new_packet_eth_hdr = (struct sr_ethernet_hdr *)icmp_packet;

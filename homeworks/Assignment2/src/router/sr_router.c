@@ -95,11 +95,18 @@ void sr_handlepacket(struct sr_instance* sr,
     struct sr_ip_hdr *packet_ip_hdr = (struct sr_ip_hdr *)(packet + sizeof(packet_eth_hdr));
 
     if (!sanity_check(packet_ip_hdr)) {
-      //TODO: handle bad checksum/length
+      //TODO: handle bad checksum/length (drop or send error reply?)
     }
 
     if (for_us(sr, packet_ip_hdr, interface)) {
-      //TODO: handle packet destined for this interface
+      if (ip_protocol(packet) != ip_protocol_icmp) {
+        //TODO: send ICMP port unreachable (type 3, code 3)
+      } else if (get_icmp_type(packet) == 8) {
+        //TODO: send ICMP echo reply (type 0)
+      } else {
+        //TODO: drop packet (just return?)
+      }
+
     } else {
       packet_ip_hdr->ip_ttl--;
       if (packet_ip_hdr->ip_ttl <= 0) {
@@ -166,7 +173,11 @@ void forward_packet(struct sr_instance* sr,
         uint8_t * packet/* lent */,
         unsigned int len,
         char* interface/* lent */) {
+	//TODO: implement forwarding logic
+}
 
+int get_icmp_type(uint8_t *packet) {
+  //TODO: overlay ICMP transport header after ethernet and IP headers and check the type
 }
 
 struct sr_rt *sr_longest_prefix_match(struct sr_instance *sr, uint32_t dest_ip) {

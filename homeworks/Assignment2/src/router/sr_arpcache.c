@@ -40,14 +40,15 @@ void handle_arpreq(struct sr_instance *sr, struct sr_arpreq *request) {
      */
     if(difftime(time(NULL), request->sent) > 1.0) {
       if (request->times_sent >= 5) {
-        struct sr_icmp_t3_hdr *host_unreachable = (struct sr_icmp_t3_hdr *)malloc(sizeof(struct sr_icmp_t3_hdr));
-        host_unreachable->icmp_type = 3;
-        host_unreachable->icmp_code = 1;
-        host_unreachable->icmp_sum = NULL; //FIXME: calculate checksum
+        struct sr_packet *packet = request->packets;
+        while(packet) {
+          send_icmp_packet(sr, packet->buf, packet->len, packet->iface, 3, 1);
+        }
         //TODO: construct the ethernet frame and send to all packet sources
         sr_arpreq_destroy(&sr->cache, request);
       } else {
         //TODO: send arp request
+        send_arpreq(sr, packet, len, interface, request);
         request->sent = time(NULL);
         request->times_sent++;
       }

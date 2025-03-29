@@ -48,7 +48,7 @@ void handle_arpreq(struct sr_instance *sr, struct sr_arpreq *request) {
         sr_arpreq_destroy(&sr->cache, request);
       } else {
         //TODO: send arp request
-        send_arpreq(sr, packet, len, interface, request);
+        send_arpreq(sr, len, interface, request);
         request->sent = time(NULL);
         request->times_sent++;
       }

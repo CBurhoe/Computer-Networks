@@ -278,7 +278,6 @@ void send_icmp_packet(struct sr_instance* sr,
 }
 
 void send_arpreq(struct sr_instance* sr,
-        uint8_t * packet/* borrowed */,
         unsigned int len,
         char* interface/* lent */,
         struct sr_arpreq *request) {

@@ -87,6 +87,7 @@ void sr_handlepacket(struct sr_instance* sr,
     if (packet_arp_hdr->ar_op == arp_op_request) {
       if (for_us(sr, packet_arp_hdr->ar_tip, interface)) {
         //TODO: send ARP reply
+
       } else {
         return;
       }
@@ -183,7 +184,7 @@ void forward_packet(struct sr_instance* sr,
 //  }
   struct sr_arpentry *arp_entry = sr_arpcache_lookup(&sr->cache, next_hop_addr);
   if (arp_entry == NULL) {
-    //TODO: queue arp request
+    //TODO: send arp request and queue packet
   }
 
   struct sr_if *iface = sr_get_interface(sr, longest_match->interface);
@@ -205,10 +206,6 @@ void send_icmp_packet(struct sr_instance* sr,
         char* interface/* lent */,
         unsigned int type,
         unsigned int code) {
-  /*
-  TODO:
-  - determine length (if type 0/echo, same length, else based on headers used)
-   */
   if (type != 0) {
     len = sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_hdr_t);
   }

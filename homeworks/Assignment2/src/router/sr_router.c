@@ -155,6 +155,14 @@ If you use any of these methods in sr_arpcache.c, you must also forward declare
 them in sr_arpcache.h to avoid circular dependencies. Since sr_router
 already imports sr_arpcache.h, sr_arpcache cannot import sr_router.h -KM */
 
+int sanity_check(struct sr_ip_hdr *ip_hdr) {
+  /*
+   * - check checksum
+   * - check packet/header min length
+   */
+   return 0;
+}
+
 struct sr_rt *sr_longest_prefix_match(struct sr_instance *sr, uint32_t dest_ip) {
   struct sr_rt* rt_walker = sr->routing_table;
   struct sr_rt* longest_prefix_match = NULL;

@@ -102,6 +102,7 @@ void sr_handlepacket(struct sr_instance* sr,
         //TODO: send ICMP port unreachable (type 3, code 3)
       } else if (get_icmp_type(packet) == 8) {
         //TODO: send ICMP echo reply (type 0)
+        send_icmp_packet(sr, packet, len, interface, 0, 0);
       } else {
         //TODO: drop packet (just return?)
       }

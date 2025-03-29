@@ -71,6 +71,7 @@ int sanity_check(struct sr_ip_hdr *ip_hdr);
 int for_us(struct sr_instance *sr, struct sr_ip_hdr *ip_hdr, char* interface);
 void forward_packet(struct sr_instance* sr, uint8_t * packet, unsigned int len, char* interface);
 int get_icmp_type(uint8_t *packet);
+void send_icmp_packet(struct sr_instance* sr, uint8_t * packet, unsigned int len, char* interface, unsigned int type, unsigned int code);
 
 /* -- sr_if.c -- */
 struct sr_if *sr_get_interface(struct sr_instance*, const char* );

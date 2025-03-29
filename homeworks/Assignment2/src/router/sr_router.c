@@ -84,8 +84,9 @@ void sr_handlepacket(struct sr_instance* sr,
   /* fill in code here */
   if (ethertype(packet) == ethertype_arp) {
     //TODO: handle arp packet
-    struct sr_arp_hdr packet_arp_hdr;
-    memcpy(&packet_arp_hdr, packet + sizeof(packet_eth_hdr), sizeof(packet_arp_hdr));
+    struct sr_arp_hdr *packet_arp_hdr = (struct sr_arp_hdr *)(packet + sizeof(packet_eth_hdr));
+
+//    memcpy(&packet_arp_hdr, packet + sizeof(packet_eth_hdr), sizeof(packet_arp_hdr));
 
     if (packet_arp_hdr.ar_op == arp_op_request) {
       //TODO: handle ARP request

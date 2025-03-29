@@ -210,6 +210,8 @@ void forward_packet(struct sr_instance* sr,
   struct sr_arpentry *arp_entry = sr_arpcache_lookup(&sr->cache, next_hop_addr);
   if (arp_entry == NULL) {
     //TODO: send arp request and queue packet
+    send_arpreq();
+    return;
   }
 
   struct sr_if *iface = sr_get_interface(sr, longest_match->interface);
@@ -273,6 +275,13 @@ void send_icmp_packet(struct sr_instance* sr,
   sr_send_packet(sr, icmp_packet, len, interface); //FIXME: sending interface might be different from receiving interface
 
   free(icmp_packet);
+}
+
+void send_arpreq(struct sr_instance* sr,
+        uint8_t * packet/* lent */,
+        unsigned int len,
+        char* interface/* lent */) {
+
 }
 
 struct sr_rt *sr_longest_prefix_match(struct sr_instance *sr, uint32_t dest_ip) {

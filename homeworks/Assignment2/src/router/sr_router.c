@@ -216,7 +216,7 @@ void send_icmp_packet(struct sr_instance* sr,
   new_packet_ip_hdr->ip_ttl = 255;
   new_packet_ip_hdr->ip_p = ip_protocol_icmp;
   new_packet_ip_hdr->ip_sum = 0;
-  new_packet_ip_hdr->ip_src = sr_get_interface(sr, interface)->ip; //FIXME: may have to set to another interface on the router
+  new_packet_ip_hdr->ip_src = sr_get_interface(sr, interface)->ip;
   new_packet_ip_hdr->ip_dst = packet_ip_hdr->ip_src;
   new_packet_ip_hdr->ip_sum = cksum(new_packet_ip_hdr, sizeof(new_packet_ip_hdr));
 

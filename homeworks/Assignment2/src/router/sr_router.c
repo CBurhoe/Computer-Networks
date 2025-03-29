@@ -98,18 +98,8 @@ void sr_handlepacket(struct sr_instance* sr,
     struct sr_ip_hdr *packet_ip_hdr = (struct sr_ip_hdr *)(packet + sizeof(packet_eth_hdr));
 //    memcpy(&packet_ip_hdr, packet + sizeof(packet_eth_hdr), sizeof(packet_ip_hdr));
 
-    //FIXME: not sure how IP checksum works, need to figure out if ip_len or ip_hl should be used in cksum
-    if (cksum(&packet_ip_hdr, sizeof(packet_ip_hdr)) != packet_ip_hdr->ip_sum) {
-      //TODO: handle bad checksum
-    }
-
-	/*
-	ip_len: packet len in bytes;
-	ip_hl: header len in words (4 byte words);
-	multiply ip_hl by 4 to get header length in bytes
-	*/
-    if (packet_ip_hdr->ip_len < (packet_ip_hdr->ip_hl * 4)) {
-      //TODO: handle bad length
+    if (!sanity_check(packet_ip_hdr)) {
+      //TODO: handle bad checksum/length
     }
 
     //FIXME: may need to check other interfaces on this router
@@ -160,7 +150,19 @@ int sanity_check(struct sr_ip_hdr *ip_hdr) {
    * - check checksum
    * - check packet/header min length
    */
-   return 0;
+  //FIXME: not sure how IP checksum works, need to figure out if ip_len or ip_hl should be used in cksum
+  if (cksum(ip_hdr, sizeof(struct sr_ip_hdr)) != ip_hdr->ip_sum) {
+    return 0;
+  }
+  /*
+	ip_len: packet len in bytes;
+	ip_hl: header len in words (4 byte words);
+	multiply ip_hl by 4 to get header length in bytes
+	*/
+  if (ip_hdr->ip_len < (ip_hdr->ip_hl * 4)) {
+    return 0;
+  }
+  return 1;
 }
 
 struct sr_rt *sr_longest_prefix_match(struct sr_instance *sr, uint32_t dest_ip) {

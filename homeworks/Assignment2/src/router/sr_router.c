@@ -94,7 +94,7 @@ void sr_handlepacket(struct sr_instance* sr,
     struct sr_ip_hdr *packet_ip_hdr = (struct sr_ip_hdr *)(packet + sizeof(packet_eth_hdr));
 
     if (!sanity_check(packet_ip_hdr)) {
-      //TODO: handle bad checksum/length (drop or send error reply?)
+      return; //Discard the packet
     }
 
     if (for_us(sr, packet_ip_hdr, interface)) {
@@ -145,6 +145,7 @@ void forward_packet(struct sr_instance* sr,
         uint8_t * packet/* lent */,
         unsigned int len,
         char* interface/* lent */) {
+  //FIXME: Dynamically allocate memory for the packet to be forwarded
   struct sr_ethernet_hdr *packet_eth_hdr = (struct sr_ethernet_hdr *)packet;
   struct sr_ip_hdr *packet_ip_hdr = (struct sr_ip_hdr *)(packet + sizeof(packet_eth_hdr));
   packet_ip_hdr->ip_ttl--;

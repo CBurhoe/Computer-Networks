@@ -209,8 +209,8 @@ void forward_packet(struct sr_instance* sr,
 //  }
   struct sr_arpentry *arp_entry = sr_arpcache_lookup(&sr->cache, next_hop_addr);
   if (arp_entry == NULL) {
-    //TODO: send arp request and queue packet
-    send_arpreq();
+    send_arpreq(sr, fwd_packet, len, interface);
+    sr_arpcache_queuereq(&sr->cache, next_hop_addr, fwd_packet, len, interface); //FIXME: check ip address argument; also do we need to do something with the pointer returned here?
     return;
   }
 
@@ -278,7 +278,7 @@ void send_icmp_packet(struct sr_instance* sr,
 }
 
 void send_arpreq(struct sr_instance* sr,
-        uint8_t * packet/* lent */,
+        uint8_t * packet/* borrowed */,
         unsigned int len,
         char* interface/* lent */) {
 

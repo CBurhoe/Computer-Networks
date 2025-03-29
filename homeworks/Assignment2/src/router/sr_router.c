@@ -156,25 +156,24 @@ void forward_packet(struct sr_instance* sr,
   packet_ip_hdr->ip_sum = 0;
   packet_ip_hdr->ip_sum = cksum(packet_ip_hdr, sizeof(struct sr_ip_hdr));
   struct sr_rt *longest_match = sr_longest_prefix_match(sr, packet_ip_hdr->ip_dst);
-  if (longest_match == NULL) {
-    //TODO: handle no longest prefix match
+  if (!longest_match) {
+    //TODO: send ICMP destination net unreachable (type 3 code 0) and break
   }
-  uint32_t next_hop_addr = longest_match->gw.s_addr; //FIXME: not sure why gateway is used instead of dest
-  if (next_hop_addr == 0) {
-    next_hop_addr = packet_ip_hdr->ip_dst; //FIXME: what does this mean???
-  }
-  struct sr_if *iface = sr_get_interface(sr, longest_match->interface);
-
-  memcpy(packet_eth_hdr->ether_shost, iface->addr, ETHER_ADDR_LEN);
-
+  uint32_t next_hop_addr = longest_match->gw.s_addr;
+//  if (next_hop_addr == 0) {
+//    next_hop_addr = packet_ip_hdr->ip_dst; //FIXME: what does this mean???
+//  }
   struct sr_arpentry *arp_entry = sr_arpcache_lookup(&sr->cache, next_hop_addr);
   if (arp_entry == NULL) {
     //TODO: queue arp request
   }
 
-  memcpy(packet_eth_hdr->ether_dhost, arp_entry->mac, ETHER_ADDR_LEN);
+  struct sr_if *iface = sr_get_interface(sr, longest_match->interface);
 
-  sr_send_packet(sr, packet, len, longest_match->interface); //FIXME: no idea if args are correct
+  memcpy(packet_eth_hdr->ether_dhost, arp_entry->mac, ETHER_ADDR_LEN);
+  memcpy(packet_eth_hdr->ether_shost, iface->addr, ETHER_ADDR_LEN);
+
+  sr_send_packet(sr, packet, len, longest_match->interface);
 }
 
 int get_icmp_type(uint8_t *packet) {

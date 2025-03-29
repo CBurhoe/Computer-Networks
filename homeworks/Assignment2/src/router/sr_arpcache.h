@@ -160,6 +160,7 @@ since sr_router already imports sr_arpcache.h! - KM */
 
 /* sr_router.h */
 /* list any declarations that you need here */
+void send_icmp_packet(struct sr_instance* sr, uint8_t * packet, unsigned int len, char* interface, unsigned int type, unsigned int code);
 
 /* sr_if.h */
 struct sr_if *sr_get_interface(struct sr_instance *, const char *);

@@ -209,8 +209,8 @@ void forward_packet(struct sr_instance* sr,
 //  }
   struct sr_arpentry *arp_entry = sr_arpcache_lookup(&sr->cache, next_hop_addr);
   if (arp_entry == NULL) {
-    send_arpreq(sr, fwd_packet, len, interface);
-    sr_arpcache_queuereq(&sr->cache, next_hop_addr, fwd_packet, len, interface); //FIXME: check ip address argument; also do we need to do something with the pointer returned here?
+    struct sr_arpreq *request = sr_arpcache_queuereq(&sr->cache, next_hop_addr, fwd_packet, len, interface); //FIXME: check ip address argument; also do we need to do something with the pointer returned here?
+    send_arpreq(sr, fwd_packet, len, interface, request);
     return;
   }
 
@@ -280,8 +280,35 @@ void send_icmp_packet(struct sr_instance* sr,
 void send_arpreq(struct sr_instance* sr,
         uint8_t * packet/* borrowed */,
         unsigned int len,
-        char* interface/* lent */) {
+        char* interface/* lent */,
+        struct sr_arpreq *request) {
+  uint8_t *arp_request = malloc(len);
+  struct sr_ethernet_hdr *arp_reply_eth_hdr = (struct sr_ethernet_hdr *)arp_request;
+  struct sr_ethernet_hdr *packet_eth_hdr = (struct sr_ethernet_hdr *)packet;
+  struct sr_arp_hdr *arp_reply_arp_hdr = (struct sr_arp_hdr *)(arp_request + sizeof(sr_ethernet_hdr_t));
+  struct sr_arp_hdr *packet_arp_hdr = (struct sr_arp_hdr *)(packet + sizeof(sr_ethernet_hdr_t));
 
+  struct sr_if *iface = sr_get_interface(sr, request->packets->iface);
+  //Set the ethernet header fields
+  memset(arp_reply_eth_hdr->ether_dhost, 0xFF, ETHER_ADDR_LEN);
+  memcpy(arp_reply_eth_hdr->ether_shost, iface->addr, ETHER_ADDR_LEN); //FIXME: HERE
+  arp_reply_eth_hdr->ether_type = ethertype_arp;
+
+  //Set the ARP header fields
+  arp_reply_arp_hdr->ar_hrd = arp_hrd_ethernet;
+  arp_reply_arp_hdr->ar_pro = ethertype_ip;
+  arp_reply_arp_hdr->ar_hln = '6';
+  arp_reply_arp_hdr->ar_pln = '4';
+  arp_reply_arp_hdr->ar_op = arp_op_request;
+  memcpy(arp_reply_arp_hdr->ar_sha, iface->addr, ETHER_ADDR_LEN);
+  arp_reply_arp_hdr->ar_sip = iface->ip;
+  memset(arp_reply_arp_hdr->ar_tha, 0xFF, ETHER_ADDR_LEN);
+  arp_reply_arp_hdr->ar_tip = request->ip;
+
+  sr_send_packet(sr, arp_request, len, interface);
+
+  free(arp_request);
+  return;
 }
 
 struct sr_rt *sr_longest_prefix_match(struct sr_instance *sr, uint32_t dest_ip) {

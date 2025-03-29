@@ -72,7 +72,7 @@ int for_us(struct sr_instance *sr, uint32_t ip_addr, char* interface);
 void forward_packet(struct sr_instance* sr, uint8_t * packet, unsigned int len, char* interface);
 int get_icmp_type(uint8_t *packet);
 void send_icmp_packet(struct sr_instance* sr, uint8_t * packet, unsigned int len, char* interface, unsigned int type, unsigned int code);
-void send_arpreq(struct sr_instance* sr, uint8_t * packet, unsigned int len, char* interface);
+void send_arpreq(struct sr_instance* sr, uint8_t * packet, unsigned int len, char* interface, struct sr_arpreq *request);
 
 /* -- sr_if.c -- */
 struct sr_if *sr_get_interface(struct sr_instance*, const char* );

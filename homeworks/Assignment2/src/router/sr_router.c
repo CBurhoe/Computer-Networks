@@ -86,8 +86,29 @@ void sr_handlepacket(struct sr_instance* sr,
 
     if (packet_arp_hdr->ar_op == arp_op_request) {
       if (for_us(sr, packet_arp_hdr->ar_tip, interface)) {
-        //TODO: send ARP reply
+        uint8_t *arp_reply = malloc(len);
+        struct sr_ethernet_hdr *arp_reply_eth_hdr = (struct sr_ethernet_hdr *)arp_reply;
+        struct sr_arp_hdr *arp_reply_arp_hdr = (struct sr_arp_hdr *)(arp_reply + sizeof(sr_ethernet_hdr_t));
+        //Set the ethernet header fields
+        memcpy(arp_reply_eth_hdr->ether_dhost, packet_eth_hdr->ether_shost, ETHER_ADDR_LEN);
+        memcpy(arp_reply_eth_hdr->ether_shost, sr_get_interface(sr, interface)->addr, ETHER_ADDR_LEN);
+        arp_reply_eth_hdr->ether_type = ethertype_arp;
 
+        //Set the ARP header fields
+        arp_reply_arp_hdr->ar_hrd = arp_hrd_ethernet;
+        arp_reply_arp_hdr->ar_pro = ethertype_ip;
+        arp_reply_arp_hdr->ar_hln = '6';
+        arp_reply_arp_hdr->ar_pln = '4';
+        arp_reply_arp_hdr->ar_op = arp_op_reply;
+        memcpy(arp_reply_arp_hdr->ar_sha, sr_get_interface(sr, interface)->addr, ETHER_ADDR_LEN);
+        arp_reply_arp_hdr->ar_sip = sr_get_interface(sr, interface)->ip;
+        memcpy(arp_reply_arp_hdr->ar_tha, packet_eth_hdr->ether_shost, ETHER_ADDR_LEN);
+        arp_reply_arp_hdr->ar_tip = packet_arp_hdr->ar_sip;
+
+        sr_send_packet(sr, arp_reply, len, interface);
+
+        free(arp_reply);
+        return;
       } else {
         return;
       }

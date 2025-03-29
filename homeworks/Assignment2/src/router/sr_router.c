@@ -210,7 +210,7 @@ void forward_packet(struct sr_instance* sr,
   struct sr_arpentry *arp_entry = sr_arpcache_lookup(&sr->cache, next_hop_addr);
   if (arp_entry == NULL) {
     struct sr_arpreq *request = sr_arpcache_queuereq(&sr->cache, next_hop_addr, fwd_packet, len, interface); //FIXME: check ip address argument; also do we need to do something with the pointer returned here?
-    send_arpreq(sr, fwd_packet, len, interface, request);
+    send_arpreq(sr, len, interface, request);
     return;
   }
 

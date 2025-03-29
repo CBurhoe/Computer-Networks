@@ -79,7 +79,6 @@ void sr_handlepacket(struct sr_instance* sr,
   printf("*** -> Received packet of length %d \n",len);
 
   struct sr_ethernet_hdr *packet_eth_hdr = (struct sr_ethernet_hdr *)packet;
-  //memcpy(&packet_eth_hdr, packet, sizeof(packet_eth_hdr)); //FIXME: overlay, don't copy
 
   /* fill in code here */
   if (ethertype(packet) == ethertype_arp) {

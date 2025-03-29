@@ -219,6 +219,7 @@ void forward_packet(struct sr_instance* sr,
 
   sr_send_packet(sr, fwd_packet, len, longest_match->interface);
   free(fwd_packet);
+  free(arp_entry);
 }
 
 int get_icmp_type(uint8_t *packet) {

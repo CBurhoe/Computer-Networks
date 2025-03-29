@@ -147,8 +147,7 @@ void forward_packet(struct sr_instance* sr,
         uint8_t * packet/* lent */,
         unsigned int len,
         char* interface/* lent */) {
-	//TODO: implement forwarding logic
-  struct sr_eth_hdr *packet_eth_hdr = (struct sr_eth_hdr *)packet;
+  struct sr_ethernet_hdr *packet_eth_hdr = (struct sr_ethernet_hdr *)packet;
   struct sr_ip_hdr *packet_ip_hdr = (struct sr_ip_hdr *)(packet + sizeof(packet_eth_hdr));
   packet_ip_hdr->ip_ttl--;
   if (packet_ip_hdr->ip_ttl <= 0) {

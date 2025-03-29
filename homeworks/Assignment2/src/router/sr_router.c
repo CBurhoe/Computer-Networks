@@ -103,7 +103,7 @@ void sr_handlepacket(struct sr_instance* sr,
       } else if (get_icmp_type(packet) == 8) {
         send_icmp_packet(sr, packet, len, interface, 0, 0);
       } else {
-        //TODO: drop packet (just return?)
+        return; //ICMP packet but not ECHO, drop packet
       }
     } else {
       forward_packet(sr, packet, len, interface);

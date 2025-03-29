@@ -99,9 +99,8 @@ void sr_handlepacket(struct sr_instance* sr,
 
     if (for_us(sr, packet_ip_hdr, interface)) {
       if (ip_protocol(packet) != ip_protocol_icmp) {
-        //TODO: send ICMP port unreachable (type 3, code 3)
+        send_icmp_packet(sr, packet, len, interface, 3, 3);
       } else if (get_icmp_type(packet) == 8) {
-        //TODO: send ICMP echo reply (type 0)
         send_icmp_packet(sr, packet, len, interface, 0, 0);
       } else {
         //TODO: drop packet (just return?)
@@ -151,13 +150,15 @@ void forward_packet(struct sr_instance* sr,
   struct sr_ip_hdr *packet_ip_hdr = (struct sr_ip_hdr *)(packet + sizeof(packet_eth_hdr));
   packet_ip_hdr->ip_ttl--;
   if (packet_ip_hdr->ip_ttl <= 0) {
-    //TODO: send ICMP time exceeded type 11
+    send_icmp_packet(sr, packet, len, interface, 11, 0);
+    return;
   }
   packet_ip_hdr->ip_sum = 0;
   packet_ip_hdr->ip_sum = cksum(packet_ip_hdr, sizeof(struct sr_ip_hdr));
   struct sr_rt *longest_match = sr_longest_prefix_match(sr, packet_ip_hdr->ip_dst);
   if (!longest_match) {
-    //TODO: send ICMP destination net unreachable (type 3 code 0) and break
+    send_icmp_packet(sr, packet, len, interface, 3, 0);
+    return;
   }
   uint32_t next_hop_addr = longest_match->gw.s_addr;
 //  if (next_hop_addr == 0) {

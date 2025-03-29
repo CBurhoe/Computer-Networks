@@ -291,7 +291,7 @@ void send_arpreq(struct sr_instance* sr,
   struct sr_if *iface = sr_get_interface(sr, request->packets->iface);
   //Set the ethernet header fields
   memset(arp_reply_eth_hdr->ether_dhost, 0xFF, ETHER_ADDR_LEN);
-  memcpy(arp_reply_eth_hdr->ether_shost, iface->addr, ETHER_ADDR_LEN); //FIXME: HERE
+  memcpy(arp_reply_eth_hdr->ether_shost, iface->addr, ETHER_ADDR_LEN);
   arp_reply_eth_hdr->ether_type = ethertype_arp;
 
   //Set the ARP header fields

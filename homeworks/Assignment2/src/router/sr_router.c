@@ -184,19 +184,23 @@ void forward_packet(struct sr_instance* sr,
         uint8_t * packet/* lent */,
         unsigned int len,
         char* interface/* lent */) {
-  //FIXME: Dynamically allocate memory for the packet to be forwarded
-  struct sr_ethernet_hdr *packet_eth_hdr = (struct sr_ethernet_hdr *)packet;
-  struct sr_ip_hdr *packet_ip_hdr = (struct sr_ip_hdr *)(packet + sizeof(packet_eth_hdr));
+  uint8_t *fwd_packet = malloc(len);
+  memcpy(fwd_packet, packet, len);
+
+  struct sr_ethernet_hdr *packet_eth_hdr = (struct sr_ethernet_hdr *)fwd_packet;
+  struct sr_ip_hdr *packet_ip_hdr = (struct sr_ip_hdr *)(fwd_packet + sizeof(packet_eth_hdr));
   packet_ip_hdr->ip_ttl--;
   if (packet_ip_hdr->ip_ttl <= 0) {
-    send_icmp_packet(sr, packet, len, interface, 11, 0);
+    send_icmp_packet(sr, fwd_packet, len, interface, 11, 0);
+    free(fwd_packet);
     return;
   }
   packet_ip_hdr->ip_sum = 0;
   packet_ip_hdr->ip_sum = cksum(packet_ip_hdr, sizeof(struct sr_ip_hdr));
   struct sr_rt *longest_match = sr_longest_prefix_match(sr, packet_ip_hdr->ip_dst);
   if (!longest_match) {
-    send_icmp_packet(sr, packet, len, interface, 3, 0);
+    send_icmp_packet(sr, fwd_packet, len, interface, 3, 0);
+    free(fwd_packet);
     return;
   }
   uint32_t next_hop_addr = longest_match->gw.s_addr;
@@ -213,7 +217,8 @@ void forward_packet(struct sr_instance* sr,
   memcpy(packet_eth_hdr->ether_dhost, arp_entry->mac, ETHER_ADDR_LEN);
   memcpy(packet_eth_hdr->ether_shost, iface->addr, ETHER_ADDR_LEN);
 
-  sr_send_packet(sr, packet, len, longest_match->interface);
+  sr_send_packet(sr, fwd_packet, len, longest_match->interface);
+  free(fwd_packet);
 }
 
 int get_icmp_type(uint8_t *packet) {

@@ -103,7 +103,7 @@ void sr_handlepacket(struct sr_instance* sr,
     }
 
     //FIXME: may need to check other interfaces on this router
-    if (sr_get_interface(sr, interface) == get_interface_from_ip(sr, packet_ip_hdr->ip_dst)) {
+    if (for_us(sr, packet_ip_hdr, interface)) {
       //TODO: handle packet destined for this interface
     } else {
       packet_ip_hdr->ip_ttl--;
@@ -163,6 +163,12 @@ int sanity_check(struct sr_ip_hdr *ip_hdr) {
     return 0;
   }
   return 1;
+}
+
+int for_us(struct sr_instance* sr, struct sr_ip_hdr* ip_hdr, char* interface) {
+  if (sr_get_interface(sr, interface) == get_interface_from_ip(sr, ip_hdr->ip_dst)) {
+    return 1;
+  } else { return 0; } //FIXME: Need to check other interfaces on this router as well
 }
 
 struct sr_rt *sr_longest_prefix_match(struct sr_instance *sr, uint32_t dest_ip) {

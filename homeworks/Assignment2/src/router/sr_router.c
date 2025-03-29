@@ -121,7 +121,6 @@ them in sr_arpcache.h to avoid circular dependencies. Since sr_router
 already imports sr_arpcache.h, sr_arpcache cannot import sr_router.h -KM */
 
 int sanity_check(struct sr_ip_hdr *ip_hdr) {
-  //FIXME: not sure how IP checksum works, need to figure out if ip_len or ip_hl should be used in cksum
   if (cksum(ip_hdr, sizeof(struct sr_ip_hdr)) != ip_hdr->ip_sum) {
     return 0;
   }

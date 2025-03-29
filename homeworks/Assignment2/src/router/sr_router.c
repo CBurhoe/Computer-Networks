@@ -176,7 +176,8 @@ void forward_packet(struct sr_instance* sr,
 }
 
 int get_icmp_type(uint8_t *packet) {
-  //TODO: overlay ICMP transport header after ethernet and IP headers and check the type
+  struct sr_icmp_hdr *packet_icmp_hdr = (struct sr_icmp_hdr *)(packet + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t));
+  return packet_icmp_hdr->icmp_type;
 }
 
 void send_icmp_packet(struct sr_instance* sr,
@@ -188,12 +189,6 @@ void send_icmp_packet(struct sr_instance* sr,
   /*
   TODO:
   - determine length (if type 0/echo, same length, else based on headers used)
-  - create new packet with malloc
-  - get original IP packet's headers
-  - create new packet's headers: eth, ip, icmp
-  - set header fields according to help guide
-  - send using sr_send_packet()
-  - free new packet memory
    */
   if (type != 0) {
     //TODO: determine length

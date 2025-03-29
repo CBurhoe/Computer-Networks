@@ -284,9 +284,7 @@ void send_arpreq(struct sr_instance* sr,
         struct sr_arpreq *request) {
   uint8_t *arp_request = malloc(len);
   struct sr_ethernet_hdr *arp_reply_eth_hdr = (struct sr_ethernet_hdr *)arp_request;
-  struct sr_ethernet_hdr *packet_eth_hdr = (struct sr_ethernet_hdr *)packet;
   struct sr_arp_hdr *arp_reply_arp_hdr = (struct sr_arp_hdr *)(arp_request + sizeof(sr_ethernet_hdr_t));
-  struct sr_arp_hdr *packet_arp_hdr = (struct sr_arp_hdr *)(packet + sizeof(sr_ethernet_hdr_t));
 
   struct sr_if *iface = sr_get_interface(sr, request->packets->iface);
   //Set the ethernet header fields

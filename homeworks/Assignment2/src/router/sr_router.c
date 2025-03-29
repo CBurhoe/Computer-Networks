@@ -206,10 +206,12 @@ void send_icmp_packet(struct sr_instance* sr,
   struct sr_icmp_hdr *new_packet_icmp_hdr = (struct sr_icmp_hdr *)(icmp_packet + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t));
   struct sr_icmp_hdr *packet_icmp_hdr = (struct sr_icmp_hdr *)(packet + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t));
 
+  //Set the ethernet header fields
   memcpy(new_packet_eth_hdr->ether_dhost, packet_eth_hdr->ether_shost, ETHER_ADDR_LEN);
   memcpy(new_packet_eth_hdr->ether_shost, sr_get_interface(sr, interface)->addr, ETHER_ADDR_LEN);
   new_packet_eth_hdr->ether_type = ethertype_ip;
 
+  //Set the IP header fields
   memcpy(new_packet_ip_hdr, packet_ip_hdr, sizeof(sr_ip_hdr_t));
   new_packet_ip_hdr->ip_len = len - sizeof(sr_ethernet_hdr_t);
   if (type != 0) {
@@ -220,6 +222,18 @@ void send_icmp_packet(struct sr_instance* sr,
   new_packet_ip_hdr->ip_sum = 0;
   new_packet_ip_hdr->ip_src = sr_get_interface(sr, interface)->ip; //FIXME: may have to set to another interface on the router
   new_packet_ip_hdr->ip_dst = packet_ip_hdr->ip_src;
+  new_packet_ip_hdr->ip_sum = cksum(new_packet_ip_hdr, sizeof(new_packet_ip_hdr));
+
+  //Set the ICMP header fields
+  new_packet_icmp_hdr->icmp_type = type;
+  new_packet_icmp_hdr->icmp_code = code;
+  new_packet_icmp_hdr->icmp_sum = 0;
+  if (type != 0) {
+    memcpy(new_packet_icmp_hdr->data, packet_ip_hdr, sizeof(sr_ip_hdr_t)); //FIXME: may need to use ICMP_DATA_SIZE, instructions unclear
+  }
+  new_packet_icmp_hdr->icmp_sum = cksum(new_packet_icmp_hdr, sizeof(sr_icmp_hdr_t));
+
+
 }
 
 struct sr_rt *sr_longest_prefix_match(struct sr_instance *sr, uint32_t dest_ip) {

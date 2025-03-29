@@ -204,7 +204,6 @@ void send_icmp_packet(struct sr_instance* sr,
   struct sr_ip_hdr *new_packet_ip_hdr = (struct sr_ip_hdr *)(icmp_packet + sizeof(sr_ethernet_hdr_t));
   struct sr_ip_hdr *packet_ip_hdr = (struct sr_ip_hdr *)(packet + sizeof(sr_ethernet_hdr_t));
   struct sr_icmp_hdr *new_packet_icmp_hdr = (struct sr_icmp_hdr *)(icmp_packet + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t));
-  struct sr_icmp_hdr *packet_icmp_hdr = (struct sr_icmp_hdr *)(packet + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t));
 
   //Set the ethernet header fields
   memcpy(new_packet_eth_hdr->ether_dhost, packet_eth_hdr->ether_shost, ETHER_ADDR_LEN);

@@ -179,6 +179,29 @@ int get_icmp_type(uint8_t *packet) {
   //TODO: overlay ICMP transport header after ethernet and IP headers and check the type
 }
 
+void send_icmp_packet(struct sr_instance* sr,
+        uint8_t * packet/* lent */,
+        unsigned int len,
+        char* interface/* lent */,
+        unsigned int type,
+        unsigned int code) {
+  /*
+  TODO:
+  - determine length (if type 0/echo, same length, else based on headers used)
+  - create new packet with malloc
+  - get original IP packet's headers
+  - create new packet's headers: eth, ip, icmp
+  - set header fields according to help guide
+  - send using sr_send_packet()
+  - free new packet memory
+   */
+  if (type != 0) {
+    //TODO: determine length
+  }
+  uint8_t * icmp_packet = malloc(len);
+
+}
+
 struct sr_rt *sr_longest_prefix_match(struct sr_instance *sr, uint32_t dest_ip) {
   struct sr_rt* rt_walker = sr->routing_table;
   struct sr_rt* longest_prefix_match = NULL;

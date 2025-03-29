@@ -68,7 +68,7 @@ void sr_handlepacket(struct sr_instance* , uint8_t * , unsigned int , char* );
 /* Add additional helper method declarations here! */
 struct sr_rt *sr_longest_prefix_match(struct sr_instance *sr, uint32_t dest_ip);
 int sanity_check(struct sr_ip_hdr *ip_hdr);
-int for_us(struct sr_instance *sr, struct sr_ip_hdr *ip_hdr, char* interface);
+int for_us(struct sr_instance *sr, uint32_t ip_addr, char* interface);
 void forward_packet(struct sr_instance* sr, uint8_t * packet, unsigned int len, char* interface);
 int get_icmp_type(uint8_t *packet);
 void send_icmp_packet(struct sr_instance* sr, uint8_t * packet, unsigned int len, char* interface, unsigned int type, unsigned int code);

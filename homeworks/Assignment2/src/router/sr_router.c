@@ -97,7 +97,7 @@ void sr_handlepacket(struct sr_instance* sr,
       return; //Discard the packet
     }
 
-    if (for_us(sr, packet_ip_hdr, interface)) {
+    if (for_us(sr, packet_ip_hdr->ip_dst, interface)) {
       if (ip_protocol(packet) != ip_protocol_icmp) {
         send_icmp_packet(sr, packet, len, interface, 3, 3);
       } else if (get_icmp_type(packet) == 8) {
@@ -135,8 +135,8 @@ int sanity_check(struct sr_ip_hdr *ip_hdr) {
   return 1;
 }
 
-int for_us(struct sr_instance* sr, struct sr_ip_hdr* ip_hdr, char* interface) {
-  if (sr_get_interface(sr, interface) == get_interface_from_ip(sr, ip_hdr->ip_dst)) {
+int for_us(struct sr_instance* sr, uint32_t ip_addr, char* interface) {
+  if (sr_get_interface(sr, interface) == get_interface_from_ip(sr, ip_addr)) {
     return 1;
   } else { return 0; } //FIXME: Need to check other interfaces on this router as well
 }

@@ -69,6 +69,7 @@ void sr_handlepacket(struct sr_instance* , uint8_t * , unsigned int , char* );
 struct sr_rt *sr_longest_prefix_match(struct sr_instance *sr, uint32_t dest_ip);
 int sanity_check(struct sr_ip_hdr *ip_hdr);
 int for_us(struct sr_instance *sr, struct sr_ip_hdr *ip_hdr, char* interface);
+void forward_packet(struct sr_instance* sr, uint8_t * packet, unsigned int len, char* interface);
 
 /* -- sr_if.c -- */
 struct sr_if *sr_get_interface(struct sr_instance*, const char* );

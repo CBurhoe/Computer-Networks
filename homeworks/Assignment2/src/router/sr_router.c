@@ -171,6 +171,13 @@ int for_us(struct sr_instance* sr, struct sr_ip_hdr* ip_hdr, char* interface) {
   } else { return 0; } //FIXME: Need to check other interfaces on this router as well
 }
 
+void forward_packet(struct sr_instance* sr,
+        uint8_t * packet/* lent */,
+        unsigned int len,
+        char* interface/* lent */) {
+
+}
+
 struct sr_rt *sr_longest_prefix_match(struct sr_instance *sr, uint32_t dest_ip) {
   struct sr_rt* rt_walker = sr->routing_table;
   struct sr_rt* longest_prefix_match = NULL;

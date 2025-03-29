@@ -85,9 +85,26 @@ void sr_handlepacket(struct sr_instance* sr,
     struct sr_arp_hdr *packet_arp_hdr = (struct sr_arp_hdr *)(packet + sizeof(packet_eth_hdr));
 
     if (packet_arp_hdr->ar_op == arp_op_request) {
-      //TODO: handle ARP request
+      if (for_us(sr, packet_arp_hdr->ar_tip, interface)) {
+        //TODO: send ARP reply
+      } else {
+        return;
+      }
     } else if (packet_arp_hdr->ar_op == arp_op_reply) {
-      //TODO: handle ARP reply
+      if (for_us(sr, packet_arp_hdr->ar_tip, interface)) {
+        struct sr_arpreq *request_queue = sr_arpcache_insert(&sr->cache, sr_get_interface(sr, interface)->addr, packet_arp_hdr->ar_tip);
+        if (request_queue) {
+          struct sr_packet *queued_packet = request_queue->packets;
+          while (queued_packet) {
+            struct sr_ethernet_hdr *queued_packet_eth_hdr = (struct sr_ethernet_hdr *)queued_packet->buf;
+            memcpy(queued_packet_eth_hdr->ether_dhost, sr_get_interface(sr, interface)->addr, ETHER_ADDR_LEN);
+            sr_send_packet(sr, queued_packet->buf, queued_packet->len, queued_packet->iface);
+            queued_packet = queued_packet->next;
+          }
+          sr_arpreq_destroy(&sr->cache, request_queue);
+        }
+      }
+      return;
     }
 
   } else if (ethertype(packet) == ethertype_ip) {

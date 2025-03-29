@@ -83,10 +83,7 @@ void sr_handlepacket(struct sr_instance* sr,
 
   /* fill in code here */
   if (ethertype(packet) == ethertype_arp) {
-    //TODO: handle arp packet
     struct sr_arp_hdr *packet_arp_hdr = (struct sr_arp_hdr *)(packet + sizeof(packet_eth_hdr));
-
-//    memcpy(&packet_arp_hdr, packet + sizeof(packet_eth_hdr), sizeof(packet_arp_hdr));
 
     if (packet_arp_hdr->ar_op == arp_op_request) {
       //TODO: handle ARP request
@@ -96,13 +93,11 @@ void sr_handlepacket(struct sr_instance* sr,
 
   } else if (ethertype(packet) == ethertype_ip) {
     struct sr_ip_hdr *packet_ip_hdr = (struct sr_ip_hdr *)(packet + sizeof(packet_eth_hdr));
-//    memcpy(&packet_ip_hdr, packet + sizeof(packet_eth_hdr), sizeof(packet_ip_hdr));
 
     if (!sanity_check(packet_ip_hdr)) {
       //TODO: handle bad checksum/length
     }
 
-    //FIXME: may need to check other interfaces on this router
     if (for_us(sr, packet_ip_hdr, interface)) {
       //TODO: handle packet destined for this interface
     } else {
@@ -146,10 +141,6 @@ them in sr_arpcache.h to avoid circular dependencies. Since sr_router
 already imports sr_arpcache.h, sr_arpcache cannot import sr_router.h -KM */
 
 int sanity_check(struct sr_ip_hdr *ip_hdr) {
-  /*
-   * - check checksum
-   * - check packet/header min length
-   */
   //FIXME: not sure how IP checksum works, need to figure out if ip_len or ip_hl should be used in cksum
   if (cksum(ip_hdr, sizeof(struct sr_ip_hdr)) != ip_hdr->ip_sum) {
     return 0;

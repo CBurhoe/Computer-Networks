@@ -174,7 +174,7 @@ them in sr_arpcache.h to avoid circular dependencies. Since sr_router
 already imports sr_arpcache.h, sr_arpcache cannot import sr_router.h -KM */
 
 int sanity_check(struct sr_ip_hdr *ip_hdr) {
-  if (cksum(ip_hdr, sizeof(struct sr_ip_hdr)) != ip_hdr->ip_sum) {
+  if (cksum(ip_hdr, ip_hdr->ip_hl) != ip_hdr->ip_sum) {
     return 0;
   }
   /*

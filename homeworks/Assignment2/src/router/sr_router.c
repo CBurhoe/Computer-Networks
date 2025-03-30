@@ -347,14 +347,6 @@ struct sr_rt *sr_longest_prefix_match(struct sr_instance *sr, uint32_t dest_ip) 
 
 }
 
-void ethernet_hdr_to_host(struct sr_ethernet_hdr *eth_hdr) {
-
-}
-
-void ethernet_hdr_to_network(struct sr_ethernet_hdr *eth_hdr) {
-
-}
-
 void ip_hdr_to_host(struct sr_ip_hdr *ip_hdr) {
   uint16_t tmp_s = 0;
   tmp_s = ntohs(ip_hdr->ip_len);

@@ -102,8 +102,8 @@ void sr_handlepacket(struct sr_instance* sr,
         //Set the ARP header fields
         arp_reply_arp_hdr->ar_hrd = htons(arp_hrd_ethernet);
         arp_reply_arp_hdr->ar_pro = htons(ethertype_ip);
-        arp_reply_arp_hdr->ar_hln = '6';
-        arp_reply_arp_hdr->ar_pln = '4';
+        arp_reply_arp_hdr->ar_hln = 6;
+        arp_reply_arp_hdr->ar_pln = 4;
         arp_reply_arp_hdr->ar_op = htons(arp_op_reply);
         memcpy(arp_reply_arp_hdr->ar_sha, sr_get_interface(sr, interface)->addr, ETHER_ADDR_LEN);
         arp_reply_arp_hdr->ar_sip = htonl(sr_get_interface(sr, interface)->ip);

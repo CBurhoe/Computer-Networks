@@ -177,7 +177,7 @@ int sanity_check(struct sr_ip_hdr *ip_hdr) {
   uint16_t their_sum = ip_hdr->ip_sum;
   printf("Their checksum: %d\n", their_sum);
   ip_hdr->ip_sum = 0;
-  printf("Our checksum: %d\n", cksum(ip_hdr, ip_hdr->ip_hl));
+  printf("Our checksum: %d\n", cksum(ip_hdr, ip_hdr->ip_hl * 4));
   if (cksum(ip_hdr, ip_hdr->ip_hl) != their_sum) {
     return 0;
   }
@@ -186,7 +186,7 @@ int sanity_check(struct sr_ip_hdr *ip_hdr) {
 	ip_hl: header len in words (4 byte words);
 	multiply ip_hl by 4 to get header length in bytes
 	*/
-  if (ntohs(ip_hdr->ip_len) < (ntohs(ip_hdr->ip_hl) * 4)) {
+  if (ntohs(ip_hdr->ip_len) < (ip_hdr->ip_hl * 4)) {
     return 0;
   }
   return 1;

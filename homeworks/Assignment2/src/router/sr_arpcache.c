@@ -43,6 +43,10 @@ void handle_arpreq(struct sr_instance *sr, struct sr_arpreq *request) {
       if (request->times_sent >= 5) {
         struct sr_packet *packet = request->packets;
         while(packet) {
+          struct sr_ethernet_hdr *eth_hdr = (sr_ethernet_hdr_t *)(packet->buf);
+          eth_hdr->ether_type = ntohs(eth_hdr->ether_type);
+          struct sr_ip_hdr *ip_hdr = (sr_ip_hdr_t *)(packet->buf + sizeof(sr_ethernet_hdr_t));
+          ip_hdr_to_host(ip_hdr);
           send_icmp_packet(sr, packet->buf, packet->len, packet->iface, 3, 1);
         }
         sr_arpreq_destroy(&sr->cache, request);

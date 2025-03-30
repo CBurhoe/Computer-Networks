@@ -324,7 +324,7 @@ void send_arpreq(struct sr_instance* sr,
         char* interface/* lent */,
         struct sr_arpreq *request) {
   printf("Hi, welcome to the send_arpreq() function\n");
-  uint8_t *arp_request = (uint8_t *)malloc(len);
+  uint8_t *arp_request = (uint8_t *)malloc(sizeof(sr_arp_hdr_t) + sizeof(sr_ethernet_hdr_t));
   struct sr_ethernet_hdr *arp_reply_eth_hdr = (struct sr_ethernet_hdr *)arp_request;
   struct sr_arp_hdr *arp_reply_arp_hdr = (struct sr_arp_hdr *)(arp_request + sizeof(sr_ethernet_hdr_t));
 

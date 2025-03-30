@@ -412,8 +412,8 @@ void arp_hdr_to_host(struct sr_arp_hdr *arp_hdr) {
   unsigned long tmp_l = 0;
   tmp_l = ntohl(arp_hdr->ar_sip);
   arp_hdr->ar_sip = tmp_l;
-  tmp_l = ntohl(arp_hdr->ar_tip);
-  arp_hdr->ar_tip = tmp_l;
+//  tmp_l = ntohl(arp_hdr->ar_tip);
+  arp_hdr->ar_tip = ntohl(arp_hdr->ar_tip);
 }
 
 void arp_hdr_to_network(struct sr_arp_hdr *arp_hdr) {

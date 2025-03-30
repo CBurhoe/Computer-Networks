@@ -145,7 +145,7 @@ void sr_handlepacket(struct sr_instance* sr,
       return; //Discard the packet
     }
 
-    //ip_hdr_to_host(packet_ip_hdr); convert to host byte order AFTER checking checksum
+    ip_hdr_to_host(packet_ip_hdr); //convert to host byte order AFTER checking checksum
 
     if (for_us(sr, packet_ip_hdr->ip_dst, interface)) {
       if (ip_protocol(packet) != ip_protocol_icmp) {

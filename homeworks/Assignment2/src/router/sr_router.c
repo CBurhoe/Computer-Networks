@@ -148,6 +148,7 @@ void sr_handlepacket(struct sr_instance* sr,
     ip_hdr_to_host(packet_ip_hdr); //convert to host byte order AFTER checking checksum
 
     if (for_us(sr, packet_ip_hdr->ip_dst, interface)) {
+      printf("THIS ONE IS FOR US\n");
       if (ip_protocol(packet) != ip_protocol_icmp) {
         send_icmp_packet(sr, packet, len, interface, 3, 3);
       } else if (get_icmp_type(packet) == 8) {
@@ -156,6 +157,7 @@ void sr_handlepacket(struct sr_instance* sr,
         return; //ICMP packet but not ECHO, drop packet
       }
     } else {
+      printf("not for us... forwarding\n");
       forward_packet(sr, packet, len, interface);
     }
   }

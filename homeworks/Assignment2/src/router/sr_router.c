@@ -90,7 +90,7 @@ void sr_handlepacket(struct sr_instance* sr,
 
     if (packet_arp_hdr->ar_op == arp_op_request) {
       if (for_us(sr, packet_arp_hdr->ar_tip, interface)) {
-        uint8_t *arp_reply = malloc(len);
+        uint8_t *arp_reply = (uint8_t *)malloc(len);
         struct sr_ethernet_hdr *arp_reply_eth_hdr = (struct sr_ethernet_hdr *)arp_reply;
         struct sr_arp_hdr *arp_reply_arp_hdr = (struct sr_arp_hdr *)(arp_reply + sizeof(sr_ethernet_hdr_t));
         //Set the ethernet header fields
@@ -121,7 +121,7 @@ void sr_handlepacket(struct sr_instance* sr,
       }
     } else if (packet_arp_hdr->ar_op == arp_op_reply) {
       if (for_us(sr, packet_arp_hdr->ar_tip, interface)) {
-        struct sr_arpreq *request_queue = sr_arpcache_insert(&sr->cache, sr_get_interface(sr, interface)->addr, packet_arp_hdr->ar_tip);
+        struct sr_arpreq *request_queue = sr_arpcache_insert(&sr->cache, sr_get_interface(sr, interface)->addr, packet_arp_hdr->ar_sip);
         if (request_queue) {
           struct sr_packet *queued_packet = request_queue->packets;
           while (queued_packet) {

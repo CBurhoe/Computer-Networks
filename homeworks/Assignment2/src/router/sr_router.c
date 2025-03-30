@@ -346,8 +346,8 @@ void send_arpreq(struct sr_instance* sr,
   arp_reply_arp_hdr->ar_tip = request->ip;
 
 //  arp_hdr_to_network(arp_reply_arp_hdr);
-  print_hdrs(arp_request, len);
-  sr_send_packet(sr, arp_request, len, interface);
+  print_hdrs(arp_request, sizeof(sr_arp_hdr_t) + sizeof(sr_ethernet_hdr_t));
+  sr_send_packet(sr, arp_request, sizeof(sr_arp_hdr_t) + sizeof(sr_ethernet_hdr_t), interface);
 
   free(arp_request);
   return;

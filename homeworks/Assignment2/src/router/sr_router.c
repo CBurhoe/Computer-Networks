@@ -174,9 +174,11 @@ them in sr_arpcache.h to avoid circular dependencies. Since sr_router
 already imports sr_arpcache.h, sr_arpcache cannot import sr_router.h -KM */
 
 int sanity_check(struct sr_ip_hdr *ip_hdr) {
-  printf("Their checksum: %d\n", ip_hdr->ip_sum);
+  uint16_t their_sum = ip_hdr->ip_sum;
+  printf("Their checksum: %d\n", their_sum);
+  ip_hdr->ip_sum = 0;
   printf("Our checksum: %d\n", cksum(ip_hdr, ip_hdr->ip_hl));
-  if (cksum(ip_hdr, ip_hdr->ip_hl) != ip_hdr->ip_sum) {
+  if (cksum(ip_hdr, ip_hdr->ip_hl) != their_sum) {
     return 0;
   }
   /*

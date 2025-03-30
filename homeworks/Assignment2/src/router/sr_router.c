@@ -81,15 +81,10 @@ void sr_handlepacket(struct sr_instance* sr,
   print_hdrs(packet, len);
 
   struct sr_ethernet_hdr *packet_eth_hdr = (struct sr_ethernet_hdr *)packet;
-  packet_eth_hdr->ether_type = ntohs(packet_eth_hdr->ether_type);
-  struct sr_arp_hdr *packet_arp_hdr = (struct sr_arp_hdr *)(packet + sizeof(packet_eth_hdr)); //remove me
-  arp_hdr_to_host(packet_arp_hdr); //remove me
-  print_hdrs(packet, len); //remove me
 
   /* fill in code here */
   if (ethertype(packet) == ethertype_arp) {
     struct sr_arp_hdr *packet_arp_hdr = (struct sr_arp_hdr *)(packet + sizeof(packet_eth_hdr));
-    arp_hdr_to_host(packet_arp_hdr);
     print_hdrs(packet, len);
 
     if (packet_arp_hdr->ar_op == arp_op_request) {

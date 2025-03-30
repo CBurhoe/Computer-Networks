@@ -355,7 +355,7 @@ struct sr_rt *sr_longest_prefix_match(struct sr_instance *sr, uint32_t dest_ip) 
   uint32_t longest_mask = 0;
 
   while(rt_walker) {
-    if ((dest_ip & rt_walker->mask.s_addr) == rt_walker->dest.s_addr) {
+    if ((dest_ip & ntohl(rt_walker->mask.s_addr)) == ntohl(rt_walker->dest.s_addr)) {
       if (ntohl(rt_walker->mask.s_addr) > ntohl(longest_mask)) {
         longest_mask = rt_walker->mask.s_addr;
         longest_prefix_match = rt_walker;

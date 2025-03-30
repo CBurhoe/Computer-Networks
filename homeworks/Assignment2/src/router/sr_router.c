@@ -85,14 +85,10 @@ void sr_handlepacket(struct sr_instance* sr,
   /* fill in code here */
   if (ethertype(packet) == ethertype_arp) {
     struct sr_arp_hdr *packet_arp_hdr = (struct sr_arp_hdr *)(packet + sizeof(sr_ethernet_hdr_t));
-    print_hdrs(packet, len);
-    printf("ARP packet is headed for:\n");
-    print_addr_ip_int(packet_arp_hdr->ar_tip); //print debug
+
     arp_hdr_to_host(packet_arp_hdr);
 
     if (packet_arp_hdr->ar_op == arp_op_request) {
-      printf("ARP packet is headed for:\n");
-      print_addr_ip_int(packet_arp_hdr->ar_tip); //print debug
       if (for_us(sr, packet_arp_hdr->ar_tip, interface)) {
         printf("IT'S FOR US\n");
         uint8_t *arp_reply = (uint8_t *)malloc(len);
@@ -116,7 +112,7 @@ void sr_handlepacket(struct sr_instance* sr,
 
         arp_hdr_to_network(arp_reply_arp_hdr);
 
-        print_hdrs(arp_reply, sizeof(arp_reply));
+        print_hdrs(arp_reply, len);
         sr_send_packet(sr, arp_reply, len, interface);
 
         free(arp_reply);

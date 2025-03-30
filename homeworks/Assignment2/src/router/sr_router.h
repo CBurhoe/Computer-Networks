@@ -75,6 +75,8 @@ void send_icmp_packet(struct sr_instance* sr, uint8_t * packet, unsigned int len
 void send_arpreq(struct sr_instance* sr, unsigned int len, char* interface, struct sr_arpreq *request);
 void arp_hdr_to_host(struct sr_arp_hdr *arp_hdr);
 void arp_hdr_to_network(struct sr_arp_hdr *arp_hdr);
+void ip_hdr_to_host(struct sr_ip_hdr *ip_hdr);
+void ip_hdr_to_network(struct sr_ip_hdr *ip_hdr);
 
 /* -- sr_if.c -- */
 struct sr_if *sr_get_interface(struct sr_instance*, const char* );

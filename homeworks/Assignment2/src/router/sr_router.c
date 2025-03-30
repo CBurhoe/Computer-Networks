@@ -136,6 +136,8 @@ void sr_handlepacket(struct sr_instance* sr,
   } else if (ethertype(packet) == ethertype_ip) {
     struct sr_ip_hdr *packet_ip_hdr = (struct sr_ip_hdr *)(packet + sizeof(packet_eth_hdr));
 
+    ip_hdr_to_host(packet_ip_hdr);
+
     if (!sanity_check(packet_ip_hdr)) {
       return; //Discard the packet
     }
@@ -339,11 +341,37 @@ void ethernet_hdr_to_network(struct sr_ethernet_hdr *eth_hdr) {
 }
 
 void ip_hdr_to_host(struct sr_ip_hdr *ip_hdr) {
-
+  uint16_t tmp_s = 0;
+  tmp_s = ntohs(ip_hdr->ip_len);
+  ip_hdr->ip_len = tmp_s;
+  tmp_s = ntohs(ip_hdr->ip_id);
+  ip_hdr->ip_id = tmp_s;
+  tmp_s = ntohs(ip_hdr->ip_off);
+  ip_hdr->ip_off = tmp_s;
+  tmp_s = ntohs(ip_hdr->ip_sum);
+  ip_hdr->ip_sum = tmp_s;
+  uint32_t tmp_l = 0;
+  tmp_l = ntohl(ip_hdr->ip_src);
+  ip_hdr->ip_src = tmp_l;
+  tmp_l = ntohl(ip_hdr->ip_dst);
+  ip_hdr->ip_dst = tmp_l;
 }
 
 void ip_hdr_to_network(struct sr_ip_hdr *ip_hdr) {
-
+  uint16_t tmp_s = 0;
+  tmp_s = htons(ip_hdr->ip_len);
+  ip_hdr->ip_len = tmp_s;
+  tmp_s = htons(ip_hdr->ip_id);
+  ip_hdr->ip_id = tmp_s;
+  tmp_s = htons(ip_hdr->ip_off);
+  ip_hdr->ip_off = tmp_s;
+  tmp_s = htons(ip_hdr->ip_sum);
+  ip_hdr->ip_sum = tmp_s;
+  uint32_t tmp_l = 0;
+  tmp_l = htonl(ip_hdr->ip_src);
+  ip_hdr->ip_src = tmp_l;
+  tmp_l = htonl(ip_hdr->ip_dst);
+  ip_hdr->ip_dst = tmp_l;
 }
 
 void arp_hdr_to_host(struct sr_arp_hdr *arp_hdr) {

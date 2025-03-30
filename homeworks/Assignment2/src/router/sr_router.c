@@ -79,6 +79,7 @@ void sr_handlepacket(struct sr_instance* sr,
   printf("*** -> Received packet of length %d \n",len);
 
   struct sr_ethernet_hdr *packet_eth_hdr = (struct sr_ethernet_hdr *)packet;
+  packet_eth_hdr->ether_type = ntohs(packet_eth_hdr->ether_type);
 
   /* fill in code here */
   if (ethertype(packet) == ethertype_arp) {
@@ -92,7 +93,7 @@ void sr_handlepacket(struct sr_instance* sr,
         //Set the ethernet header fields
         memcpy(arp_reply_eth_hdr->ether_dhost, packet_eth_hdr->ether_shost, ETHER_ADDR_LEN);
         memcpy(arp_reply_eth_hdr->ether_shost, sr_get_interface(sr, interface)->addr, ETHER_ADDR_LEN);
-        arp_reply_eth_hdr->ether_type = ethertype_arp;
+        arp_reply_eth_hdr->ether_type = htons(ethertype_arp);
 
         //Set the ARP header fields
         arp_reply_arp_hdr->ar_hrd = arp_hrd_ethernet;
@@ -308,7 +309,7 @@ void send_arpreq(struct sr_instance* sr,
   return;
 }
 
-struct sr_rt *sr_longest_prefix_match(struct sr_instance *sr, uint32_t dest_ip) {
+struct sr_rt *sr_longest_prefix_match(struct sr_instance *sr, uint32_t dest_ip) { //FIXME: need to look at host vs net order here
   struct sr_rt* rt_walker = sr->routing_table;
   struct sr_rt* longest_prefix_match = NULL;
   uint32_t longest_mask = 0;
@@ -323,5 +324,37 @@ struct sr_rt *sr_longest_prefix_match(struct sr_instance *sr, uint32_t dest_ip) 
     rt_walker = rt_walker->next;
   }
   return longest_prefix_match;
+
+}
+
+void ethernet_hdr_to_host(struct sr_ethernet_hdr *eth_hdr) {
+
+}
+
+void ethernet_hdr_to_network(struct sr_ethernet_hdr *eth_hdr) {
+
+}
+
+void ip_hdr_to_host(struct sr_ip_hdr *ip_hdr) {
+
+}
+
+void ip_hdr_to_network(struct sr_ip_hdr *ip_hdr) {
+
+}
+
+void arp_hdr_to_host(struct sr_arp_hdr *arp_hdr) {
+
+}
+
+void arp_hdr_to_network(struct sr_arp_hdr *arp_hdr) {
+
+}
+
+void icmp_hdr_to_host(struct sr_icmp_hdr *icmp_hdr) {
+
+}
+
+void icmp_hdr_to_network(struct sr_icmp_hdr *icmp_hdr) {
 
 }

@@ -253,7 +253,7 @@ void forward_packet(struct sr_instance* sr,
   packet_eth_hdr->ether_type = htons(packet_eth_hdr->ether_type);
   ip_hdr_to_network(packet_ip_hdr);
 
-
+  printf("Sending the packet to be forwarded...\n");
   print_hdrs(fwd_packet, len);
   sr_send_packet(sr, fwd_packet, len, longest_match->interface);
   free(fwd_packet);

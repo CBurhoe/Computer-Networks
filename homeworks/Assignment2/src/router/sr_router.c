@@ -84,6 +84,7 @@ void sr_handlepacket(struct sr_instance* sr,
   /* fill in code here */
   if (ethertype(packet) == ethertype_arp) {
     struct sr_arp_hdr *packet_arp_hdr = (struct sr_arp_hdr *)(packet + sizeof(packet_eth_hdr));
+    arp_hdr_to_host(packet_arp_hdr);
 
     if (packet_arp_hdr->ar_op == arp_op_request) {
       if (for_us(sr, packet_arp_hdr->ar_tip, interface)) {
@@ -96,15 +97,15 @@ void sr_handlepacket(struct sr_instance* sr,
         arp_reply_eth_hdr->ether_type = htons(ethertype_arp);
 
         //Set the ARP header fields
-        arp_reply_arp_hdr->ar_hrd = arp_hrd_ethernet;
-        arp_reply_arp_hdr->ar_pro = ethertype_ip;
+        arp_reply_arp_hdr->ar_hrd = htons(arp_hrd_ethernet);
+        arp_reply_arp_hdr->ar_pro = htons(ethertype_ip);
         arp_reply_arp_hdr->ar_hln = '6';
         arp_reply_arp_hdr->ar_pln = '4';
-        arp_reply_arp_hdr->ar_op = arp_op_reply;
+        arp_reply_arp_hdr->ar_op = htons(arp_op_reply);
         memcpy(arp_reply_arp_hdr->ar_sha, sr_get_interface(sr, interface)->addr, ETHER_ADDR_LEN);
-        arp_reply_arp_hdr->ar_sip = sr_get_interface(sr, interface)->ip;
+        arp_reply_arp_hdr->ar_sip = htonl(sr_get_interface(sr, interface)->ip);
         memcpy(arp_reply_arp_hdr->ar_tha, packet_eth_hdr->ether_shost, ETHER_ADDR_LEN);
-        arp_reply_arp_hdr->ar_tip = packet_arp_hdr->ar_sip;
+        arp_reply_arp_hdr->ar_tip = htonl(packet_arp_hdr->ar_sip);
 
         sr_send_packet(sr, arp_reply, len, interface);
 
@@ -344,7 +345,19 @@ void ip_hdr_to_network(struct sr_ip_hdr *ip_hdr) {
 }
 
 void arp_hdr_to_host(struct sr_arp_hdr *arp_hdr) {
+  unsigned short tmp_s = 0;
+  tmp_s = ntohs(arp_hdr->ar_hrd);
+  arp_hdr->ar_hrd = tmp_s;
+  tmp_s = ntohs(arp_hdr->ar_pro);
+  arp_hdr->ar_pro = tmp_s;
+  tmp_s = ntohs(arp_hdr->ar_op);
+  arp_hdr->ar_op = tmp_s;
 
+  unsigned long tmp_l = 0;
+  tmp_l = ntohl(arp_hdr->ar_sip);
+  arp_hdr->ar_sip = tmp_l;
+  tmp_l = ntohl(arp_hdr->ar_tip);
+  arp_hdr->ar_tip = tmp_l;
 }
 
 void arp_hdr_to_network(struct sr_arp_hdr *arp_hdr) {

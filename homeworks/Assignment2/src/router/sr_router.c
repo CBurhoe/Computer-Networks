@@ -78,6 +78,8 @@ void sr_handlepacket(struct sr_instance* sr,
 
   printf("*** -> Received packet of length %d \n",len);
 
+  print_hdrs(packet, len);
+
   struct sr_ethernet_hdr *packet_eth_hdr = (struct sr_ethernet_hdr *)packet;
   packet_eth_hdr->ether_type = ntohs(packet_eth_hdr->ether_type);
 
@@ -110,6 +112,7 @@ void sr_handlepacket(struct sr_instance* sr,
         arp_hdr_to_network(arp_reply_arp_hdr);
         packet_eth_hdr->ether_type = htons(packet_eth_hdr->ether_type);
 
+        print_hdrs(arp_reply, sizeof(arp_reply));
         sr_send_packet(sr, arp_reply, len, interface);
 
         free(arp_reply);
@@ -125,6 +128,7 @@ void sr_handlepacket(struct sr_instance* sr,
           while (queued_packet) {
             struct sr_ethernet_hdr *queued_packet_eth_hdr = (struct sr_ethernet_hdr *)queued_packet->buf;
             memcpy(queued_packet_eth_hdr->ether_dhost, sr_get_interface(sr, interface)->addr, ETHER_ADDR_LEN);
+            print_hdrs(queued_packet->buf, queued_packet->len);
             sr_send_packet(sr, queued_packet->buf, queued_packet->len, queued_packet->iface);
             queued_packet = queued_packet->next;
           }
@@ -236,6 +240,7 @@ void forward_packet(struct sr_instance* sr,
   ip_hdr_to_network(packet_ip_hdr);
 
 
+  print_hdrs(fwd_packet, len);
   sr_send_packet(sr, fwd_packet, len, longest_match->interface);
   free(fwd_packet);
   free(arp_entry);
@@ -292,6 +297,7 @@ void send_icmp_packet(struct sr_instance* sr,
   icmp_hdr_to_network(new_packet_icmp_hdr);
   new_packet_icmp_hdr->icmp_sum = cksum(new_packet_icmp_hdr, sizeof(sr_icmp_hdr_t));
 
+  print_hdrs(icmp_packet, len);
   sr_send_packet(sr, icmp_packet, len, interface); //FIXME: sending interface might be different from receiving interface
 
   free(icmp_packet);
@@ -323,6 +329,7 @@ void send_arpreq(struct sr_instance* sr,
   arp_reply_arp_hdr->ar_tip = request->ip;
 
   arp_hdr_to_network(arp_reply_arp_hdr);
+  print_hdrs(arp_request, len);
   sr_send_packet(sr, arp_request, len, interface);
 
   free(arp_request);

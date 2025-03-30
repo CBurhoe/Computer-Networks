@@ -138,14 +138,14 @@ void sr_handlepacket(struct sr_instance* sr,
     }
 
   } else if (ethertype(packet) == ethertype_ip) {
-    struct sr_ip_hdr *packet_ip_hdr = (struct sr_ip_hdr *)(packet + sizeof(packet_eth_hdr));
+    struct sr_ip_hdr *packet_ip_hdr = (struct sr_ip_hdr *)(packet + sizeof(sr_ethernet_hdr_t));
 
 
     if (!sanity_check(packet_ip_hdr)) { //want to check checksum while packet is still in network byte order
       return; //Discard the packet
     }
 
-    ip_hdr_to_host(packet_ip_hdr); //convert to host byte order AFTER checking checksum
+    //ip_hdr_to_host(packet_ip_hdr); convert to host byte order AFTER checking checksum
 
     if (for_us(sr, packet_ip_hdr->ip_dst, interface)) {
       if (ip_protocol(packet) != ip_protocol_icmp) {

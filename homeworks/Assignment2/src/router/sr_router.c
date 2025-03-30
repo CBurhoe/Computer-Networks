@@ -84,7 +84,7 @@ void sr_handlepacket(struct sr_instance* sr,
 
   /* fill in code here */
   if (ethertype(packet) == ethertype_arp) {
-    struct sr_arp_hdr *packet_arp_hdr = (struct sr_arp_hdr *)(packet + sizeof(packet_eth_hdr));
+    struct sr_arp_hdr *packet_arp_hdr = (struct sr_arp_hdr *)(packet + sizeof(sr_ethernet_hdr_t));
     print_hdrs(packet, len);
     printf("ARP packet is headed for:\n");
     print_addr_ip_int(packet_arp_hdr->ar_tip); //print debug
@@ -412,8 +412,8 @@ void arp_hdr_to_host(struct sr_arp_hdr *arp_hdr) {
   unsigned long tmp_l = 0;
   tmp_l = ntohl(arp_hdr->ar_sip);
   arp_hdr->ar_sip = tmp_l;
-//  tmp_l = ntohl(arp_hdr->ar_tip);
-  arp_hdr->ar_tip = ntohl(arp_hdr->ar_tip);
+  tmp_l = ntohl(arp_hdr->ar_tip);
+  arp_hdr->ar_tip = tmp_l;
 }
 
 void arp_hdr_to_network(struct sr_arp_hdr *arp_hdr) {

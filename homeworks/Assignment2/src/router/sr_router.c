@@ -286,7 +286,7 @@ void send_icmp_packet(struct sr_instance* sr,
   new_packet_icmp_hdr->icmp_code = code;
   new_packet_icmp_hdr->icmp_sum = 0;
   if (type != 0) {
-    memcpy(new_packet_icmp_hdr->data, packet_ip_hdr, sizeof(sr_ip_hdr_t)); //FIXME: may need to use ICMP_DATA_SIZE, instructions unclear
+    memcpy(new_packet_icmp_hdr->data, new_packet_ip_hdr, sizeof(sr_ip_hdr_t)); //FIXME: may need to use ICMP_DATA_SIZE, instructions unclear
   }
 
   icmp_hdr_to_network(new_packet_icmp_hdr);

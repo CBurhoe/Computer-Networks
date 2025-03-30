@@ -110,7 +110,6 @@ void sr_handlepacket(struct sr_instance* sr,
         memcpy(arp_reply_arp_hdr->ar_tha, packet_eth_hdr->ether_shost, ETHER_ADDR_LEN);
         arp_reply_arp_hdr->ar_tip = htonl(packet_arp_hdr->ar_sip);
 
-//        arp_hdr_to_network(arp_reply_arp_hdr);
 
         print_hdrs(arp_reply, len);
         sr_send_packet(sr, arp_reply, len, interface);

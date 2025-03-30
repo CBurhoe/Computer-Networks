@@ -186,9 +186,15 @@ int sanity_check(struct sr_ip_hdr *ip_hdr) {
 }
 
 int for_us(struct sr_instance* sr, uint32_t ip_addr, char* interface) {
-  if (sr_get_interface(sr, interface) == get_interface_from_ip(sr, ip_addr)) {
-    return 1;
-  } else { return 0; } //FIXME: Need to check other interfaces on this router as well
+  struct sr_if *iface = sr->if_list;
+
+  while(iface) {
+    if (iface->ip == ip_addr) {
+      return 1;
+    }
+    iface = iface->next;
+  }
+  return 0;
 }
 
 void forward_packet(struct sr_instance* sr,

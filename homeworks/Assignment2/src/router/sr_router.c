@@ -108,6 +108,7 @@ void sr_handlepacket(struct sr_instance* sr,
         arp_reply_arp_hdr->ar_tip = packet_arp_hdr->ar_sip;
 
         arp_hdr_to_network(arp_reply_arp_hdr);
+        packet_eth_hdr->ether_type = htons(packet_eth_hdr->ether_type);
 
         sr_send_packet(sr, arp_reply, len, interface);
 
@@ -203,7 +204,10 @@ void forward_packet(struct sr_instance* sr,
     return;
   }
   packet_ip_hdr->ip_sum = 0;
+  ip_hdr_to_network(packet_ip_hdr); //Not my favorite solution, but I'll fix it later
   packet_ip_hdr->ip_sum = cksum(packet_ip_hdr, sizeof(struct sr_ip_hdr));
+  ip_hdr_to_host(packet_ip_hdr); //Really hate this...
+
   struct sr_rt *longest_match = sr_longest_prefix_match(sr, packet_ip_hdr->ip_dst);
   if (!longest_match) {
     send_icmp_packet(sr, fwd_packet, len, interface, 3, 0);
@@ -216,6 +220,8 @@ void forward_packet(struct sr_instance* sr,
 //  }
   struct sr_arpentry *arp_entry = sr_arpcache_lookup(&sr->cache, next_hop_addr);
   if (arp_entry == NULL) {
+    ip_hdr_to_network(packet_ip_hdr);
+    packet_eth_hdr->ether_type = htons(packet_eth_hdr->ether_type);
     struct sr_arpreq *request = sr_arpcache_queuereq(&sr->cache, next_hop_addr, fwd_packet, len, interface); //FIXME: check ip address argument; also do we need to do something with the pointer returned here?
     send_arpreq(sr, len, interface, request);
     return;
@@ -225,6 +231,10 @@ void forward_packet(struct sr_instance* sr,
 
   memcpy(packet_eth_hdr->ether_dhost, arp_entry->mac, ETHER_ADDR_LEN);
   memcpy(packet_eth_hdr->ether_shost, iface->addr, ETHER_ADDR_LEN);
+
+  packet_eth_hdr->ether_type = htons(packet_eth_hdr->ether_type);
+  ip_hdr_to_network(packet_ip_hdr);
+
 
   sr_send_packet(sr, fwd_packet, len, longest_match->interface);
   free(fwd_packet);

@@ -213,7 +213,7 @@ void forward_packet(struct sr_instance* sr,
   memcpy(fwd_packet, packet, len);
 
   struct sr_ethernet_hdr *packet_eth_hdr = (struct sr_ethernet_hdr *)fwd_packet;
-  struct sr_ip_hdr *packet_ip_hdr = (struct sr_ip_hdr *)(fwd_packet + sizeof(packet_eth_hdr));
+  struct sr_ip_hdr *packet_ip_hdr = (struct sr_ip_hdr *)(fwd_packet + sizeof(sr_ethernet_hdr_t));
   packet_ip_hdr->ip_ttl--;
   if (packet_ip_hdr->ip_ttl <= 0) {
     send_icmp_packet(sr, fwd_packet, len, interface, 11, 0);
@@ -222,7 +222,7 @@ void forward_packet(struct sr_instance* sr,
   }
   packet_ip_hdr->ip_sum = 0;
   ip_hdr_to_network(packet_ip_hdr); //Not my favorite solution, but I'll fix it later
-  packet_ip_hdr->ip_sum = cksum(packet_ip_hdr, sizeof(struct sr_ip_hdr));
+  packet_ip_hdr->ip_sum = cksum(packet_ip_hdr, sizeof(sr_ip_hdr_t));
   ip_hdr_to_host(packet_ip_hdr); //Really hate this...
 
   struct sr_rt *longest_match = sr_longest_prefix_match(sr, packet_ip_hdr->ip_dst);

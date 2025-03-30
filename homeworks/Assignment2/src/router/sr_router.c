@@ -86,6 +86,7 @@ void sr_handlepacket(struct sr_instance* sr,
   if (ethertype(packet) == ethertype_arp) {
     struct sr_arp_hdr *packet_arp_hdr = (struct sr_arp_hdr *)(packet + sizeof(packet_eth_hdr));
     print_hdrs(packet, len);
+    arp_hdr_to_host(packet_arp_hdr);
 
     if (packet_arp_hdr->ar_op == arp_op_request) {
       if (for_us(sr, packet_arp_hdr->ar_tip, interface)) {
@@ -109,7 +110,6 @@ void sr_handlepacket(struct sr_instance* sr,
         arp_reply_arp_hdr->ar_tip = packet_arp_hdr->ar_sip;
 
         arp_hdr_to_network(arp_reply_arp_hdr);
-        packet_eth_hdr->ether_type = htons(packet_eth_hdr->ether_type);
 
         print_hdrs(arp_reply, sizeof(arp_reply));
         sr_send_packet(sr, arp_reply, len, interface);

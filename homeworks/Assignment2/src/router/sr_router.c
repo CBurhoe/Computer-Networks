@@ -236,7 +236,7 @@ void forward_packet(struct sr_instance* sr,
 //    next_hop_addr = packet_ip_hdr->ip_dst; //FIXME: what does this mean???
 //  }
   struct sr_arpentry *arp_entry = sr_arpcache_lookup(&sr->cache, next_hop_addr);
-  if (arp_entry == NULL) {
+  if (!arp_entry) {
     printf("No arp entry, creating request...");
     ip_hdr_to_network(packet_ip_hdr);
     packet_eth_hdr->ether_type = htons(packet_eth_hdr->ether_type);

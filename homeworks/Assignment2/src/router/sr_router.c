@@ -341,9 +341,9 @@ void send_arpreq(struct sr_instance* sr,
   arp_reply_arp_hdr->ar_pln = 4;
   arp_reply_arp_hdr->ar_op = htons(arp_op_request);
   memcpy(arp_reply_arp_hdr->ar_sha, iface->addr, ETHER_ADDR_LEN);
-  arp_reply_arp_hdr->ar_sip = htonl(iface->ip);
+  arp_reply_arp_hdr->ar_sip = iface->ip;
   memset(arp_reply_arp_hdr->ar_tha, 0xFF, ETHER_ADDR_LEN);
-  arp_reply_arp_hdr->ar_tip = htonl(request->ip);
+  arp_reply_arp_hdr->ar_tip = request->ip;
 
 //  arp_hdr_to_network(arp_reply_arp_hdr);
   print_hdrs(arp_request, len);

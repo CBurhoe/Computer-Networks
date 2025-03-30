@@ -235,9 +235,10 @@ void forward_packet(struct sr_instance* sr,
 //  if (next_hop_addr == 0) {
 //    next_hop_addr = packet_ip_hdr->ip_dst; //FIXME: what does this mean???
 //  }
+  printf("Is there an arp entry?\n");
   struct sr_arpentry *arp_entry = sr_arpcache_lookup(&sr->cache, next_hop_addr);
   if (!arp_entry) {
-    printf("No arp entry, creating request...");
+    printf("No arp entry, creating request...\n");
     ip_hdr_to_network(packet_ip_hdr);
     packet_eth_hdr->ether_type = htons(packet_eth_hdr->ether_type);
     struct sr_arpreq *request = sr_arpcache_queuereq(&sr->cache, next_hop_addr, fwd_packet, len, interface); //FIXME: check ip address argument; also do we need to do something with the pointer returned here?
@@ -245,6 +246,7 @@ void forward_packet(struct sr_instance* sr,
     return;
   }
 
+  printf("There is an arp entry\n");
   struct sr_if *iface = sr_get_interface(sr, longest_match->interface);
 
   memcpy(packet_eth_hdr->ether_dhost, arp_entry->mac, ETHER_ADDR_LEN);

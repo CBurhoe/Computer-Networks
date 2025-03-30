@@ -89,6 +89,8 @@ void sr_handlepacket(struct sr_instance* sr,
     arp_hdr_to_host(packet_arp_hdr);
 
     if (packet_arp_hdr->ar_op == arp_op_request) {
+      printf("ARP packet is headed for:\n");
+      print_addr_ip_int(packet_arp_hdr->ar_tip); //print debug
       if (for_us(sr, packet_arp_hdr->ar_tip, interface)) {
         printf("IT'S FOR US\n");
         uint8_t *arp_reply = (uint8_t *)malloc(len);
@@ -191,6 +193,8 @@ int for_us(struct sr_instance* sr, uint32_t ip_addr, char* interface) {
 
   if (ip_addr == 655617) { return 1; }
   while(iface) {
+    printf("Checking:\n");
+    print_addr_ip_int(iface->ip);
     if (iface->ip == ip_addr) {
       return 1;
     }

@@ -265,7 +265,7 @@ void send_icmp_packet(struct sr_instance* sr,
   //Set the ethernet header fields
   memcpy(new_packet_eth_hdr->ether_dhost, packet_eth_hdr->ether_shost, ETHER_ADDR_LEN);
   memcpy(new_packet_eth_hdr->ether_shost, sr_get_interface(sr, interface)->addr, ETHER_ADDR_LEN);
-  new_packet_eth_hdr->ether_type = ethertype_ip;
+  new_packet_eth_hdr->ether_type = htons(ethertype_ip);
 
   //Set the IP header fields
   memcpy(new_packet_ip_hdr, packet_ip_hdr, sizeof(sr_ip_hdr_t));
@@ -287,6 +287,9 @@ void send_icmp_packet(struct sr_instance* sr,
   if (type != 0) {
     memcpy(new_packet_icmp_hdr->data, packet_ip_hdr, sizeof(sr_ip_hdr_t)); //FIXME: may need to use ICMP_DATA_SIZE, instructions unclear
   }
+
+  ip_hdr_to_network(new_packet_ip_hdr);
+  icmp_hdr_to_network(new_packet_icmp_hdr);
   new_packet_icmp_hdr->icmp_sum = cksum(new_packet_icmp_hdr, sizeof(sr_icmp_hdr_t));
 
   sr_send_packet(sr, icmp_packet, len, interface); //FIXME: sending interface might be different from receiving interface
@@ -418,9 +421,13 @@ void arp_hdr_to_network(struct sr_arp_hdr *arp_hdr) {
 }
 
 void icmp_hdr_to_host(struct sr_icmp_hdr *icmp_hdr) {
-
+  uint16_t tmp_s = 0;
+  tmp_s = ntohs(icmp_hdr->icmp_sum);
+  icmp_hdr->icmp_sum = tmp_s;
 }
 
 void icmp_hdr_to_network(struct sr_icmp_hdr *icmp_hdr) {
-
+  uint16_t tmp_s = 0;
+  tmp_s = htons(icmp_hdr->icmp_sum);
+  icmp_hdr->icmp_sum = tmp_s;
 }

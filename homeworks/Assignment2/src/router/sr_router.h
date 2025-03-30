@@ -77,6 +77,7 @@ void arp_hdr_to_host(struct sr_arp_hdr *arp_hdr);
 void arp_hdr_to_network(struct sr_arp_hdr *arp_hdr);
 void ip_hdr_to_host(struct sr_ip_hdr *ip_hdr);
 void ip_hdr_to_network(struct sr_ip_hdr *ip_hdr);
+void icmp_hdr_to_network(struct sr_icmp_hdr *icmp_hdr);
 
 /* -- sr_if.c -- */
 struct sr_if *sr_get_interface(struct sr_instance*, const char* );

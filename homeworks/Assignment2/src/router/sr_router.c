@@ -142,9 +142,10 @@ void sr_handlepacket(struct sr_instance* sr,
 
 
     if (!sanity_check(packet_ip_hdr)) { //want to check checksum while packet is still in network byte order
+      printf("IP header check failed\n");
       return; //Discard the packet
     }
-
+    printf("Seems to be a good IP packet we have\n");
     ip_hdr_to_host(packet_ip_hdr); //convert to host byte order AFTER checking checksum
 
     if (for_us(sr, packet_ip_hdr->ip_dst, interface)) {

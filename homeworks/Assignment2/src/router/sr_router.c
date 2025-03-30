@@ -361,7 +361,19 @@ void arp_hdr_to_host(struct sr_arp_hdr *arp_hdr) {
 }
 
 void arp_hdr_to_network(struct sr_arp_hdr *arp_hdr) {
+  unsigned short tmp_s = 0;
+  tmp_s = htons(arp_hdr->ar_hrd);
+  arp_hdr->ar_hrd = tmp_s;
+  tmp_s = htons(arp_hdr->ar_pro);
+  arp_hdr->ar_pro = tmp_s;
+  tmp_s = htons(arp_hdr->ar_op);
+  arp_hdr->ar_op = tmp_s;
 
+  unsigned long tmp_l = 0;
+  tmp_l = htonl(arp_hdr->ar_sip);
+  arp_hdr->ar_sip = tmp_l;
+  tmp_l = htonl(arp_hdr->ar_tip);
+  arp_hdr->ar_tip = tmp_l;
 }
 
 void icmp_hdr_to_host(struct sr_icmp_hdr *icmp_hdr) {

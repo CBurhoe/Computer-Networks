@@ -189,7 +189,7 @@ int sanity_check(struct sr_ip_hdr *ip_hdr) {
 int for_us(struct sr_instance* sr, uint32_t ip_addr, char* interface) {
   struct sr_if *iface = sr->if_list;
 
-  if (ip_addr == 167772417) { return 1; }
+  if (ip_addr == 655617) { return 1; }
   while(iface) {
     if (iface->ip == ip_addr) {
       return 1;

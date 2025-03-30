@@ -100,17 +100,17 @@ void sr_handlepacket(struct sr_instance* sr,
         arp_reply_eth_hdr->ether_type = htons(ethertype_arp);
 
         //Set the ARP header fields
-        arp_reply_arp_hdr->ar_hrd = arp_hrd_ethernet;
-        arp_reply_arp_hdr->ar_pro = ethertype_ip;
+        arp_reply_arp_hdr->ar_hrd = htons(arp_hrd_ethernet);
+        arp_reply_arp_hdr->ar_pro = htons(ethertype_ip);
         arp_reply_arp_hdr->ar_hln = '6';
         arp_reply_arp_hdr->ar_pln = '4';
-        arp_reply_arp_hdr->ar_op = arp_op_reply;
+        arp_reply_arp_hdr->ar_op = htons(arp_op_reply);
         memcpy(arp_reply_arp_hdr->ar_sha, sr_get_interface(sr, interface)->addr, ETHER_ADDR_LEN);
-        arp_reply_arp_hdr->ar_sip = sr_get_interface(sr, interface)->ip;
+        arp_reply_arp_hdr->ar_sip = htonl(sr_get_interface(sr, interface)->ip);
         memcpy(arp_reply_arp_hdr->ar_tha, packet_eth_hdr->ether_shost, ETHER_ADDR_LEN);
-        arp_reply_arp_hdr->ar_tip = packet_arp_hdr->ar_sip;
+        arp_reply_arp_hdr->ar_tip = htonl(packet_arp_hdr->ar_sip);
 
-        arp_hdr_to_network(arp_reply_arp_hdr);
+//        arp_hdr_to_network(arp_reply_arp_hdr);
 
         print_hdrs(arp_reply, len);
         sr_send_packet(sr, arp_reply, len, interface);

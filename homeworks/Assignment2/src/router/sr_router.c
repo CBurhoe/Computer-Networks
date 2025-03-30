@@ -178,7 +178,7 @@ int sanity_check(struct sr_ip_hdr *ip_hdr) {
   printf("Their checksum: %d\n", their_sum);
   ip_hdr->ip_sum = 0;
   printf("Our checksum: %d\n", cksum(ip_hdr, ip_hdr->ip_hl * 4));
-  if (cksum(ip_hdr, ip_hdr->ip_hl) != their_sum) {
+  if (cksum(ip_hdr, ip_hdr->ip_hl * 4) != their_sum) {
     return 0;
   }
   /*

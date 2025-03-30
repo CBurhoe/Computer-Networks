@@ -90,6 +90,7 @@ void sr_handlepacket(struct sr_instance* sr,
 
     if (packet_arp_hdr->ar_op == arp_op_request) {
       if (for_us(sr, packet_arp_hdr->ar_tip, interface)) {
+        printf("IT'S FOR US\n");
         uint8_t *arp_reply = (uint8_t *)malloc(len);
         struct sr_ethernet_hdr *arp_reply_eth_hdr = (struct sr_ethernet_hdr *)arp_reply;
         struct sr_arp_hdr *arp_reply_arp_hdr = (struct sr_arp_hdr *)(arp_reply + sizeof(sr_ethernet_hdr_t));

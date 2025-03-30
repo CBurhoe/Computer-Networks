@@ -86,6 +86,8 @@ void sr_handlepacket(struct sr_instance* sr,
   if (ethertype(packet) == ethertype_arp) {
     struct sr_arp_hdr *packet_arp_hdr = (struct sr_arp_hdr *)(packet + sizeof(packet_eth_hdr));
     print_hdrs(packet, len);
+    printf("ARP packet is headed for:\n");
+    print_addr_ip_int(packet_arp_hdr->ar_tip); //print debug
     arp_hdr_to_host(packet_arp_hdr);
 
     if (packet_arp_hdr->ar_op == arp_op_request) {

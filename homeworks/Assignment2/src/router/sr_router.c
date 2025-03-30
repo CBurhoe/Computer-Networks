@@ -106,7 +106,7 @@ void sr_handlepacket(struct sr_instance* sr,
         arp_reply_arp_hdr->ar_pln = 4;
         arp_reply_arp_hdr->ar_op = htons(arp_op_reply);
         memcpy(arp_reply_arp_hdr->ar_sha, sr_get_interface(sr, interface)->addr, ETHER_ADDR_LEN);
-        arp_reply_arp_hdr->ar_sip = htonl(sr_get_interface(sr, interface)->ip);
+        arp_reply_arp_hdr->ar_sip = sr_get_interface(sr, interface)->ip;
         memcpy(arp_reply_arp_hdr->ar_tha, packet_eth_hdr->ether_shost, ETHER_ADDR_LEN);
         arp_reply_arp_hdr->ar_tip = htonl(packet_arp_hdr->ar_sip);
 

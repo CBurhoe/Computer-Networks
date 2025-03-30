@@ -191,11 +191,10 @@ int sanity_check(struct sr_ip_hdr *ip_hdr) {
 int for_us(struct sr_instance* sr, uint32_t ip_addr, char* interface) {
   struct sr_if *iface = sr->if_list;
 
-  if (ip_addr == 655617) { return 1; }
   while(iface) {
     printf("Checking:\n");
-    print_addr_ip_int(iface->ip);
-    if (iface->ip == ip_addr) {
+    print_addr_ip_int(ntohl(iface->ip));
+    if (ntohl(iface->ip) == ip_addr) {
       return 1;
     }
     iface = iface->next;

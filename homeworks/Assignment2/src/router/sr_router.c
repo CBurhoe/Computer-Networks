@@ -279,7 +279,7 @@ void send_icmp_packet(struct sr_instance* sr,
         unsigned int type,
         unsigned int code) {
   if (type != 0) {
-    len = sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_hdr_t);
+    len = sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_hdr_t) + 28;
   }
   uint8_t * icmp_packet = (uint8_t *)malloc(len);
   struct sr_ethernet_hdr *new_packet_eth_hdr = (struct sr_ethernet_hdr *)icmp_packet;
@@ -296,11 +296,9 @@ void send_icmp_packet(struct sr_instance* sr,
   //Set the IP header fields
   memcpy(new_packet_ip_hdr, packet_ip_hdr, sizeof(sr_ip_hdr_t));
 //  new_packet_ip_hdr->ip_len = len - sizeof(sr_ethernet_hdr_t);
-  new_packet_ip_hdr->ip_len = htons(sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_hdr_t));
+  new_packet_ip_hdr->ip_len = htons(sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_hdr_t) + 28);
   if (type != 0) {
     new_packet_ip_hdr->ip_off = htons(IP_DF);
-  } else {
-    new_packet_ip_hdr->ip_off = htons(packet_ip_hdr->ip_off);
   }
   new_packet_ip_hdr->ip_ttl = 255;
   new_packet_ip_hdr->ip_p = ip_protocol_icmp;
@@ -315,7 +313,7 @@ void send_icmp_packet(struct sr_instance* sr,
   new_packet_icmp_hdr->icmp_code = code;
   new_packet_icmp_hdr->icmp_sum = 0;
   if (type != 0) {
-    memcpy(new_packet_icmp_hdr->data, packet_ip_hdr, sizeof(sr_ip_hdr_t)); //FIXME: may need to use ICMP_DATA_SIZE, instructions unclear
+    memcpy(new_packet_icmp_hdr->data, packet_ip_hdr, ICMP_DATA_SIZE); //FIXME: may need to use ICMP_DATA_SIZE, instructions unclear
   }
 
   icmp_hdr_to_network(new_packet_icmp_hdr);

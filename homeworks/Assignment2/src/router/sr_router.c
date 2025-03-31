@@ -220,6 +220,7 @@ void forward_packet(struct sr_instance* sr,
   struct sr_ip_hdr *packet_ip_hdr = (struct sr_ip_hdr *)(fwd_packet + sizeof(sr_ethernet_hdr_t));
   packet_ip_hdr->ip_ttl--;
   if (packet_ip_hdr->ip_ttl <= 0) {
+    printf("TTL exceeded\n");
     send_icmp_packet(sr, fwd_packet, len, interface, 11, 0);
     free(fwd_packet);
     return;

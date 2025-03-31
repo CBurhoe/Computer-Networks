@@ -138,10 +138,10 @@ void sr_handlepacket(struct sr_instance* sr,
     struct sr_ip_hdr *packet_ip_hdr = (struct sr_ip_hdr *)(packet + sizeof(sr_ethernet_hdr_t));
 
 
-    if (!sanity_check(packet_ip_hdr)) { //want to check checksum while packet is still in network byte order
-      return; //Discard the packet
+    if (!sanity_check(packet_ip_hdr)) {
+      return;
     }
-    ip_hdr_to_host(packet_ip_hdr); //convert to host byte order AFTER checking checksum
+    ip_hdr_to_host(packet_ip_hdr);
 
     if (for_us(sr, packet_ip_hdr->ip_dst, interface)) {
       if (packet_ip_hdr->ip_p != ip_protocol_icmp) {
@@ -149,7 +149,7 @@ void sr_handlepacket(struct sr_instance* sr,
       } else if (get_icmp_type(packet) == 8) {
         send_icmp_packet(sr, packet, len, interface, 0, 0);
       } else {
-        return; //ICMP packet but not ECHO, drop packet
+        return;
       }
     } else {
       forward_packet(sr, packet, len, interface);
@@ -173,11 +173,7 @@ int sanity_check(struct sr_ip_hdr *ip_hdr) {
     return 0;
   }
   ip_hdr->ip_sum = their_sum;
-  /*
-	ip_len: packet len in bytes;
-	ip_hl: header len in words (4 byte words);
-	multiply ip_hl by 4 to get header length in bytes
-	*/
+
   if (ntohs(ip_hdr->ip_len) < (ip_hdr->ip_hl * 4)) {
     return 0;
   }
@@ -212,9 +208,9 @@ void forward_packet(struct sr_instance* sr,
     return;
   }
   packet_ip_hdr->ip_sum = 0;
-  ip_hdr_to_network(packet_ip_hdr); //Not my favorite solution, but I'll fix it later
+  ip_hdr_to_network(packet_ip_hdr);
   packet_ip_hdr->ip_sum = cksum(packet_ip_hdr, packet_ip_hdr->ip_hl * 4);
-  ip_hdr_to_host(packet_ip_hdr); //Really hate this...
+  ip_hdr_to_host(packet_ip_hdr);
 
   struct sr_rt *longest_match = sr_longest_prefix_match(sr, packet_ip_hdr->ip_dst);
   if (!longest_match) {
@@ -228,7 +224,7 @@ void forward_packet(struct sr_instance* sr,
   if (!arp_entry) {
     ip_hdr_to_network(packet_ip_hdr);
     packet_eth_hdr->ether_type = htons(packet_eth_hdr->ether_type);
-    struct sr_arpreq *request = sr_arpcache_queuereq(&sr->cache, next_hop_addr, fwd_packet, len, longest_match->interface); //FIXME: check ip address argument; also do we need to do something with the pointer returned here?
+    struct sr_arpreq *request = sr_arpcache_queuereq(&sr->cache, next_hop_addr, fwd_packet, len, longest_match->interface);
     send_arpreq(sr, len, longest_match->interface, request);
     return;
   }
@@ -276,17 +272,15 @@ void send_icmp_packet(struct sr_instance* sr,
   //Set the IP header fields
   memcpy(new_packet_ip_hdr, packet_ip_hdr, sizeof(sr_ip_hdr_t));
   new_packet_ip_hdr->ip_len = htons(len - sizeof(sr_ethernet_hdr_t) - sizeof(sr_ip_hdr_t));
-//  new_packet_ip_hdr->ip_len = htons(sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_hdr_t));
   new_packet_ip_hdr->ip_id = htons(packet_ip_hdr->ip_id);
 
-    new_packet_ip_hdr->ip_off = htons(IP_DF);
+  new_packet_ip_hdr->ip_off = htons(IP_DF);
 
   new_packet_ip_hdr->ip_ttl = 255;
   new_packet_ip_hdr->ip_p = ip_protocol_icmp;
   new_packet_ip_hdr->ip_sum = 0;
   new_packet_ip_hdr->ip_src = sr_get_interface(sr, interface)->ip;
   new_packet_ip_hdr->ip_dst = htonl(packet_ip_hdr->ip_src);
-//  ip_hdr_to_network(new_packet_ip_hdr);
   new_packet_ip_hdr->ip_sum = cksum(new_packet_ip_hdr, sizeof(sr_ip_hdr_t));
 
   //Set the ICMP header fields
@@ -300,7 +294,7 @@ void send_icmp_packet(struct sr_instance* sr,
     new_packet_icmp_hdr->icmp_code = code;
     new_packet_icmp_hdr->icmp_sum = 0;
     new_packet_icmp_hdr->unused = 0;
-    memcpy(new_packet_icmp_hdr->data, packet_ip_hdr, ICMP_DATA_SIZE); //FIXME: may need to use ICMP_DATA_SIZE, instructions unclear
+    memcpy(new_packet_icmp_hdr->data, packet_ip_hdr, ICMP_DATA_SIZE);
   }
 
   icmp_hdr_to_network(new_packet_icmp_hdr);
@@ -309,7 +303,7 @@ void send_icmp_packet(struct sr_instance* sr,
   } else {
     new_packet_icmp_hdr->icmp_sum = cksum(new_packet_icmp_hdr, len - sizeof(sr_ethernet_hdr_t) - sizeof(sr_ip_hdr_t));
   }
-  sr_send_packet(sr, icmp_packet, len, interface); //FIXME: sending interface might be different from receiving interface
+  sr_send_packet(sr, icmp_packet, len, interface);
 
   free(icmp_packet);
 }
@@ -345,7 +339,7 @@ void send_arpreq(struct sr_instance* sr,
   return;
 }
 
-struct sr_rt *sr_longest_prefix_match(struct sr_instance *sr, uint32_t dest_ip) { //FIXME: need to look at host vs net order here
+struct sr_rt *sr_longest_prefix_match(struct sr_instance *sr, uint32_t dest_ip) {
   struct sr_rt* rt_walker = sr->routing_table;
   struct sr_rt* longest_prefix_match = NULL;
   uint32_t longest_mask = 0;

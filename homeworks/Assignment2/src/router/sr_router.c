@@ -129,6 +129,7 @@ void sr_handlepacket(struct sr_instance* sr,
           while (queued_packet) {
             struct sr_ethernet_hdr *queued_packet_eth_hdr = (struct sr_ethernet_hdr *)queued_packet->buf;
             memcpy(queued_packet_eth_hdr->ether_dhost, packet_arp_hdr->ar_sha, ETHER_ADDR_LEN);
+            queued_packet_eth_hdr->ether_type = htons(queued_packet_eth_hdr->ether_type);
             print_hdrs(queued_packet->buf, queued_packet->len);
             sr_send_packet(sr, queued_packet->buf, queued_packet->len, queued_packet->iface);
             queued_packet = queued_packet->next;

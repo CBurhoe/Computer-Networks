@@ -78,8 +78,6 @@ void sr_handlepacket(struct sr_instance* sr,
 
   printf("*** -> Received packet of length %d \n",len);
 
-  print_hdrs(packet, len);
-
   struct sr_ethernet_hdr *packet_eth_hdr = (struct sr_ethernet_hdr *)packet;
 
   /* fill in code here */
@@ -90,7 +88,6 @@ void sr_handlepacket(struct sr_instance* sr,
 
     if (packet_arp_hdr->ar_op == arp_op_request) {
       if (for_us(sr, packet_arp_hdr->ar_tip, interface)) {
-        printf("IT'S FOR US\n");
         uint8_t *arp_reply = (uint8_t *)malloc(len);
         struct sr_ethernet_hdr *arp_reply_eth_hdr = (struct sr_ethernet_hdr *)arp_reply;
         struct sr_arp_hdr *arp_reply_arp_hdr = (struct sr_arp_hdr *)(arp_reply + sizeof(sr_ethernet_hdr_t));
@@ -111,7 +108,6 @@ void sr_handlepacket(struct sr_instance* sr,
         arp_reply_arp_hdr->ar_tip = htonl(packet_arp_hdr->ar_sip);
 
 
-        print_hdrs(arp_reply, len);
         sr_send_packet(sr, arp_reply, len, interface);
 
         free(arp_reply);
@@ -121,17 +117,14 @@ void sr_handlepacket(struct sr_instance* sr,
       }
     } else if (packet_arp_hdr->ar_op == arp_op_reply) {
       if (for_us(sr, packet_arp_hdr->ar_tip, interface)) {
-        printf("IT'S FOR US\n");
         struct sr_arpreq *request_queue = sr_arpcache_insert(&sr->cache, packet_arp_hdr->ar_sha, htonl(packet_arp_hdr->ar_sip));
         if (request_queue) {
-          printf("There were others waiting\n");
           struct sr_packet *queued_packet = request_queue->packets;
           while (queued_packet) {
             struct sr_ethernet_hdr *queued_packet_eth_hdr = (struct sr_ethernet_hdr *)queued_packet->buf;
             memcpy(queued_packet_eth_hdr->ether_shost, sr_get_interface(sr, queued_packet->iface)->addr, ETHER_ADDR_LEN);
             memcpy(queued_packet_eth_hdr->ether_dhost, packet_arp_hdr->ar_sha, ETHER_ADDR_LEN);
             queued_packet_eth_hdr->ether_type = htons(queued_packet_eth_hdr->ether_type);
-            print_hdrs(queued_packet->buf, queued_packet->len);
             sr_send_packet(sr, queued_packet->buf, queued_packet->len, queued_packet->iface);
             queued_packet = queued_packet->next;
           }
@@ -146,14 +139,11 @@ void sr_handlepacket(struct sr_instance* sr,
 
 
     if (!sanity_check(packet_ip_hdr)) { //want to check checksum while packet is still in network byte order
-      printf("IP header check failed\n");
       return; //Discard the packet
     }
-    printf("Seems to be a good IP packet we have\n");
     ip_hdr_to_host(packet_ip_hdr); //convert to host byte order AFTER checking checksum
 
     if (for_us(sr, packet_ip_hdr->ip_dst, interface)) {
-      printf("THIS ONE IS FOR US\n");
       if (packet_ip_hdr->ip_p != ip_protocol_icmp) {
         send_icmp_packet(sr, packet, len, interface, 3, 3);
       } else if (get_icmp_type(packet) == 8) {
@@ -162,7 +152,6 @@ void sr_handlepacket(struct sr_instance* sr,
         return; //ICMP packet but not ECHO, drop packet
       }
     } else {
-      printf("not for us... forwarding\n");
       forward_packet(sr, packet, len, interface);
     }
   }
@@ -199,8 +188,6 @@ int for_us(struct sr_instance* sr, uint32_t ip_addr, char* interface) {
   struct sr_if *iface = sr->if_list;
 
   while(iface) {
-    printf("Checking:\n");
-    print_addr_ip_int(ntohl(iface->ip));
     if (ntohl(iface->ip) == ip_addr) {
       return 1;
     }
@@ -220,7 +207,6 @@ void forward_packet(struct sr_instance* sr,
   struct sr_ip_hdr *packet_ip_hdr = (struct sr_ip_hdr *)(fwd_packet + sizeof(sr_ethernet_hdr_t));
   packet_ip_hdr->ip_ttl--;
   if (packet_ip_hdr->ip_ttl <= 0) {
-    printf("TTL exceeded\n");
     send_icmp_packet(sr, fwd_packet, len, interface, 11, 0);
     free(fwd_packet);
     return;
@@ -237,13 +223,9 @@ void forward_packet(struct sr_instance* sr,
     return;
   }
   uint32_t next_hop_addr = longest_match->gw.s_addr;
-//  if (next_hop_addr == 0) {
-//    next_hop_addr = packet_ip_hdr->ip_dst; //FIXME: what does this mean???
-//  }
-  printf("Is there an arp entry?\n");
+
   struct sr_arpentry *arp_entry = sr_arpcache_lookup(&sr->cache, next_hop_addr);
   if (!arp_entry) {
-    printf("No arp entry, creating request...\n");
     ip_hdr_to_network(packet_ip_hdr);
     packet_eth_hdr->ether_type = htons(packet_eth_hdr->ether_type);
     struct sr_arpreq *request = sr_arpcache_queuereq(&sr->cache, next_hop_addr, fwd_packet, len, longest_match->interface); //FIXME: check ip address argument; also do we need to do something with the pointer returned here?
@@ -251,7 +233,6 @@ void forward_packet(struct sr_instance* sr,
     return;
   }
 
-  printf("There is an arp entry\n");
   struct sr_if *iface = sr_get_interface(sr, longest_match->interface);
 
   memcpy(packet_eth_hdr->ether_dhost, arp_entry->mac, ETHER_ADDR_LEN);
@@ -260,8 +241,6 @@ void forward_packet(struct sr_instance* sr,
   packet_eth_hdr->ether_type = packet_eth_hdr->ether_type;
   ip_hdr_to_network(packet_ip_hdr);
 
-  printf("Sending the packet to be forwarded...\n");
-  print_hdrs(fwd_packet, len);
   sr_send_packet(sr, fwd_packet, len, longest_match->interface);
   free(fwd_packet);
   free(arp_entry);
@@ -330,7 +309,6 @@ void send_icmp_packet(struct sr_instance* sr,
   } else {
     new_packet_icmp_hdr->icmp_sum = cksum(new_packet_icmp_hdr, len - sizeof(sr_ethernet_hdr_t) - sizeof(sr_ip_hdr_t));
   }
-  print_hdrs(icmp_packet, len);
   sr_send_packet(sr, icmp_packet, len, interface); //FIXME: sending interface might be different from receiving interface
 
   free(icmp_packet);
@@ -340,7 +318,6 @@ void send_arpreq(struct sr_instance* sr,
         unsigned int len,
         char* interface/* lent */,
         struct sr_arpreq *request) {
-  printf("Hi, welcome to the send_arpreq() function\n");
   uint8_t *arp_request = (uint8_t *)malloc(sizeof(sr_arp_hdr_t) + sizeof(sr_ethernet_hdr_t));
   struct sr_ethernet_hdr *arp_reply_eth_hdr = (struct sr_ethernet_hdr *)arp_request;
   struct sr_arp_hdr *arp_reply_arp_hdr = (struct sr_arp_hdr *)(arp_request + sizeof(sr_ethernet_hdr_t));
@@ -362,8 +339,6 @@ void send_arpreq(struct sr_instance* sr,
   memset(arp_reply_arp_hdr->ar_tha, 0xFF, ETHER_ADDR_LEN);
   arp_reply_arp_hdr->ar_tip = request->ip;
 
-//  arp_hdr_to_network(arp_reply_arp_hdr);
-  print_hdrs(arp_request, sizeof(sr_arp_hdr_t) + sizeof(sr_ethernet_hdr_t));
   sr_send_packet(sr, arp_request, sizeof(sr_arp_hdr_t) + sizeof(sr_ethernet_hdr_t), iface->name);
 
   free(arp_request);

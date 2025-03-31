@@ -299,9 +299,9 @@ void send_icmp_packet(struct sr_instance* sr,
   new_packet_ip_hdr->ip_len = htons(len - sizeof(sr_ethernet_hdr_t));
 //  new_packet_ip_hdr->ip_len = htons(sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_hdr_t));
   new_packet_ip_hdr->ip_id = htons(packet_ip_hdr->ip_id);
-  if (type != 0) {
+
     new_packet_ip_hdr->ip_off = htons(IP_DF);
-  }
+
   new_packet_ip_hdr->ip_ttl = 255;
   new_packet_ip_hdr->ip_p = ip_protocol_icmp;
   new_packet_ip_hdr->ip_sum = 0;

@@ -305,7 +305,7 @@ void send_icmp_packet(struct sr_instance* sr,
   new_packet_ip_hdr->ip_p = ip_protocol_icmp;
   new_packet_ip_hdr->ip_sum = 0;
   new_packet_ip_hdr->ip_src = sr_get_interface(sr, interface)->ip;
-  new_packet_ip_hdr->ip_dst = htonl(packet_ip_hdr->ip_src);
+  new_packet_ip_hdr->ip_dst = packet_ip_hdr->ip_src;
 //  ip_hdr_to_network(new_packet_ip_hdr);
   new_packet_ip_hdr->ip_sum = cksum(new_packet_ip_hdr, sizeof(sr_ip_hdr_t));
 

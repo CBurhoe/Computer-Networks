@@ -296,18 +296,18 @@ void send_icmp_packet(struct sr_instance* sr,
   //Set the IP header fields
   memcpy(new_packet_ip_hdr, packet_ip_hdr, sizeof(sr_ip_hdr_t));
 //  new_packet_ip_hdr->ip_len = len - sizeof(sr_ethernet_hdr_t);
-  new_packet_ip_hdr->ip_len = sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_hdr_t);
+  new_packet_ip_hdr->ip_len = htons(sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_hdr_t));
   if (type != 0) {
-    new_packet_ip_hdr->ip_off = IP_DF;
+    new_packet_ip_hdr->ip_off = htons(IP_DF);
   } else {
-    new_packet_ip_hdr->ip_off = packet_ip_hdr->ip_off;
+    new_packet_ip_hdr->ip_off = htons(packet_ip_hdr->ip_off);
   }
   new_packet_ip_hdr->ip_ttl = 255;
   new_packet_ip_hdr->ip_p = ip_protocol_icmp;
   new_packet_ip_hdr->ip_sum = 0;
-  new_packet_ip_hdr->ip_src = ntohl(sr_get_interface(sr, interface)->ip);
-  new_packet_ip_hdr->ip_dst = packet_ip_hdr->ip_src;
-  ip_hdr_to_network(new_packet_ip_hdr);
+  new_packet_ip_hdr->ip_src = sr_get_interface(sr, interface)->ip;
+  new_packet_ip_hdr->ip_dst = htonl(packet_ip_hdr->ip_src);
+//  ip_hdr_to_network(new_packet_ip_hdr);
   new_packet_ip_hdr->ip_sum = cksum(new_packet_ip_hdr, sizeof(sr_ip_hdr_t));
 
   //Set the ICMP header fields
@@ -315,7 +315,7 @@ void send_icmp_packet(struct sr_instance* sr,
   new_packet_icmp_hdr->icmp_code = code;
   new_packet_icmp_hdr->icmp_sum = 0;
   if (type != 0) {
-    memcpy(new_packet_icmp_hdr->data, new_packet_ip_hdr, sizeof(sr_ip_hdr_t)); //FIXME: may need to use ICMP_DATA_SIZE, instructions unclear
+    memcpy(new_packet_icmp_hdr->data, packet_ip_hdr, sizeof(sr_ip_hdr_t)); //FIXME: may need to use ICMP_DATA_SIZE, instructions unclear
   }
 
   icmp_hdr_to_network(new_packet_icmp_hdr);

@@ -28,17 +28,6 @@ void sr_arpcache_sweepreqs(struct sr_instance *sr) {
 
 void handle_arpreq(struct sr_instance *sr, struct sr_arpreq *request) {
     /* fill in code here */
-    /*
-    if difftime(now, req->sent) > 1.0
-           if req->times_sent >= 5:
-               send icmp host unreachable to source addr of all pkts waiting
-                 on this request
-               arpreq_destroy(req)
-           else:
-               send arp request
-               req->sent = now
-               req->times_sent++
-     */
     if(difftime(time(NULL), request->sent) > 1.0) {
       if (request->times_sent >= 5) {
         struct sr_packet *packet = request->packets;
@@ -52,8 +41,7 @@ void handle_arpreq(struct sr_instance *sr, struct sr_arpreq *request) {
         }
         sr_arpreq_destroy(&sr->cache, request);
       } else {
-        printf("sweeping the cache\n");
-        send_arpreq(sr, sizeof(sr_ethernet_hdr_t) + sizeof(sr_arp_hdr_t), get_interface_from_ip(sr, request->ip)->name, request); //FIXME: no idea if this is the right interface...
+        send_arpreq(sr, sizeof(sr_ethernet_hdr_t) + sizeof(sr_arp_hdr_t), get_interface_from_ip(sr, request->ip)->name, request);
         request->sent = time(NULL);
         request->times_sent++;
       }

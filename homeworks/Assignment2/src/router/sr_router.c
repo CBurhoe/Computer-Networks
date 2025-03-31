@@ -340,18 +340,18 @@ void send_arpreq(struct sr_instance* sr,
 }
 
 struct sr_rt *sr_longest_prefix_match(struct sr_instance *sr, uint32_t dest_ip) {
-  struct sr_rt* rt_walker = sr->routing_table;
-  struct sr_rt* longest_prefix_match = NULL;
+  struct sr_rt *rt_ptr = sr->routing_table;
+  struct sr_rt *longest_prefix_match;
   uint32_t longest_mask = 0;
 
-  while(rt_walker) {
-    if ((dest_ip & ntohl(rt_walker->mask.s_addr)) == ntohl(rt_walker->dest.s_addr)) {
-      if (ntohl(rt_walker->mask.s_addr) > ntohl(longest_mask)) {
-        longest_mask = rt_walker->mask.s_addr;
-        longest_prefix_match = rt_walker;
+  while(rt_ptr) {
+    if ((dest_ip & ntohl(rt_ptr->mask.s_addr)) == ntohl(rt_ptr->dest.s_addr)) {
+      if (ntohl(rt_ptr->mask.s_addr) > ntohl(longest_mask)) {
+        longest_mask = rt_ptr->mask.s_addr;
+        longest_prefix_match = rt_ptr;
       }
     }
-    rt_walker = rt_walker->next;
+    rt_ptr = rt_ptr->next;
   }
   return longest_prefix_match;
 

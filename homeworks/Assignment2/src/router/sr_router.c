@@ -241,8 +241,8 @@ void forward_packet(struct sr_instance* sr,
     printf("No arp entry, creating request...\n");
     ip_hdr_to_network(packet_ip_hdr);
     packet_eth_hdr->ether_type = htons(packet_eth_hdr->ether_type);
-    struct sr_arpreq *request = sr_arpcache_queuereq(&sr->cache, next_hop_addr, fwd_packet, len, interface); //FIXME: check ip address argument; also do we need to do something with the pointer returned here?
-    send_arpreq(sr, len, interface, request);
+    struct sr_arpreq *request = sr_arpcache_queuereq(&sr->cache, next_hop_addr, fwd_packet, len, longest_match->interface); //FIXME: check ip address argument; also do we need to do something with the pointer returned here?
+    send_arpreq(sr, len, longest_match->interface, request);
     return;
   }
 

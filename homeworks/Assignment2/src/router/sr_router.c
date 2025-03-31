@@ -154,7 +154,7 @@ void sr_handlepacket(struct sr_instance* sr,
 
     if (for_us(sr, packet_ip_hdr->ip_dst, interface)) {
       printf("THIS ONE IS FOR US\n");
-      if (ip_protocol(packet) != ip_protocol_icmp) {
+      if (packet_ip_hdr->ip_p != ip_protocol_icmp) {
         send_icmp_packet(sr, packet, len, interface, 3, 3);
       } else if (get_icmp_type(packet) == 8) {
         send_icmp_packet(sr, packet, len, interface, 0, 0);

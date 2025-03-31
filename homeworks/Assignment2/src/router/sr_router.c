@@ -311,11 +311,16 @@ void send_icmp_packet(struct sr_instance* sr,
   new_packet_ip_hdr->ip_sum = cksum(new_packet_ip_hdr, sizeof(sr_ip_hdr_t));
 
   //Set the ICMP header fields
-  new_packet_icmp_hdr->icmp_type = type;
-  new_packet_icmp_hdr->icmp_code = code;
-  new_packet_icmp_hdr->icmp_sum = 0;
-  new_packet_icmp_hdr->unused = 0;
-  if (type != 0) {
+  if (type == 0) {
+    struct sr_icmp_hdr *packet_icmp_hdr = (struct sr_icmp_hdr *)(packet + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t));
+    memcpy(new_packet_icmp_hdr, packet_icmp_hdr, len - sizeof(sr_ethernet_hdr_t) - sizeof(sr_ip_hdr_t));
+    new_packet_icmp_hdr->icmp_type = 0;
+    new_packet_icmp_hdr->icmp_sum = 0;
+  } else {
+    new_packet_icmp_hdr->icmp_type = type;
+    new_packet_icmp_hdr->icmp_code = code;
+    new_packet_icmp_hdr->icmp_sum = 0;
+    new_packet_icmp_hdr->unused = 0;
     memcpy(new_packet_icmp_hdr->data, packet_ip_hdr, ICMP_DATA_SIZE); //FIXME: may need to use ICMP_DATA_SIZE, instructions unclear
   }
 
@@ -323,7 +328,7 @@ void send_icmp_packet(struct sr_instance* sr,
   if (type != 0) {
     new_packet_icmp_hdr->icmp_sum = cksum(new_packet_icmp_hdr, sizeof(sr_icmp_hdr_t));
   } else {
-    new_packet_icmp_hdr->icmp_sum = cksum(new_packet_icmp_hdr, sizeof(sr_icmp_hdr_t) - 28);
+    new_packet_icmp_hdr->icmp_sum = cksum(new_packet_icmp_hdr, len - sizeof(sr_ethernet_hdr_t) - sizeof(sr_ip_hdr_t));
   }
   print_hdrs(icmp_packet, len);
   sr_send_packet(sr, icmp_packet, len, interface); //FIXME: sending interface might be different from receiving interface

@@ -298,6 +298,8 @@ void send_icmp_packet(struct sr_instance* sr,
   new_packet_ip_hdr->ip_len = len - sizeof(sr_ethernet_hdr_t);
   if (type != 0) {
     new_packet_ip_hdr->ip_off = IP_DF;
+  } else {
+    new_packet_ip_hdr->ip_off = packet_ip_hdr->ip_off;
   }
   new_packet_ip_hdr->ip_ttl = 255;
   new_packet_ip_hdr->ip_p = ip_protocol_icmp;

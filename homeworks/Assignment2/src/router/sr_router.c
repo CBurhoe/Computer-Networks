@@ -319,7 +319,7 @@ void send_icmp_packet(struct sr_instance* sr,
   }
 
   icmp_hdr_to_network(new_packet_icmp_hdr);
-  new_packet_icmp_hdr->icmp_sum = cksum(new_packet_icmp_hdr, sizeof(sr_icmp_hdr_t));
+  new_packet_icmp_hdr->icmp_sum = cksum(new_packet_icmp_hdr, sizeof(sr_icmp_hdr_t) + 28);
 
   print_hdrs(icmp_packet, len);
   sr_send_packet(sr, icmp_packet, len, interface); //FIXME: sending interface might be different from receiving interface

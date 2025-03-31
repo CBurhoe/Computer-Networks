@@ -296,7 +296,7 @@ void send_icmp_packet(struct sr_instance* sr,
 
   //Set the IP header fields
   memcpy(new_packet_ip_hdr, packet_ip_hdr, sizeof(sr_ip_hdr_t));
-  new_packet_ip_hdr->ip_len = len - sizeof(sr_ethernet_hdr_t);
+  new_packet_ip_hdr->ip_len = htons(len - sizeof(sr_ethernet_hdr_t));
 //  new_packet_ip_hdr->ip_len = htons(sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_hdr_t));
   if (type != 0) {
     new_packet_ip_hdr->ip_off = htons(IP_DF);

@@ -48,6 +48,7 @@ void handle_arpreq(struct sr_instance *sr, struct sr_arpreq *request) {
           struct sr_ip_hdr *ip_hdr = (sr_ip_hdr_t *)(packet->buf + sizeof(sr_ethernet_hdr_t));
           ip_hdr_to_host(ip_hdr);
           send_icmp_packet(sr, packet->buf, packet->len, packet->iface, 3, 1);
+          packet = packet->next;
         }
         sr_arpreq_destroy(&sr->cache, request);
       } else {

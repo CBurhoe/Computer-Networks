@@ -313,7 +313,7 @@ void send_icmp_packet(struct sr_instance* sr,
   new_packet_icmp_hdr->icmp_type = type;
   new_packet_icmp_hdr->icmp_code = code;
   new_packet_icmp_hdr->icmp_sum = 0;
-  new_packet_icmp_hdr->unused = htonl(new_packet_icmp_hdr->unused);
+  new_packet_icmp_hdr->unused = 0;
   if (type != 0) {
     memcpy(new_packet_icmp_hdr->data, packet_ip_hdr, ICMP_DATA_SIZE); //FIXME: may need to use ICMP_DATA_SIZE, instructions unclear
   }

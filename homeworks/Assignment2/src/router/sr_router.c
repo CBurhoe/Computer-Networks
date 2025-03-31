@@ -256,7 +256,7 @@ void forward_packet(struct sr_instance* sr,
   memcpy(packet_eth_hdr->ether_dhost, arp_entry->mac, ETHER_ADDR_LEN);
   memcpy(packet_eth_hdr->ether_shost, iface->addr, ETHER_ADDR_LEN);
 
-  packet_eth_hdr->ether_type = htons(packet_eth_hdr->ether_type);
+  packet_eth_hdr->ether_type = packet_eth_hdr->ether_type;
   ip_hdr_to_network(packet_ip_hdr);
 
   printf("Sending the packet to be forwarded...\n");

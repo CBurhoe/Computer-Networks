@@ -222,7 +222,7 @@ void forward_packet(struct sr_instance* sr,
   }
   packet_ip_hdr->ip_sum = 0;
   ip_hdr_to_network(packet_ip_hdr); //Not my favorite solution, but I'll fix it later
-  packet_ip_hdr->ip_sum = cksum(packet_ip_hdr, sizeof(sr_ip_hdr_t));
+  packet_ip_hdr->ip_sum = cksum(packet_ip_hdr, packet_ip_hdr->ip_hl * 4);
   ip_hdr_to_host(packet_ip_hdr); //Really hate this...
 
   struct sr_rt *longest_match = sr_longest_prefix_match(sr, packet_ip_hdr->ip_dst);

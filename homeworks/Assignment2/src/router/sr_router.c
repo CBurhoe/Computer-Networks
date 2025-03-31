@@ -280,6 +280,8 @@ void send_icmp_packet(struct sr_instance* sr,
         unsigned int code) {
   if (type != 0) {
     len = sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_hdr_t);
+  } else {
+    len = sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_hdr_t) - 28;
   }
   uint8_t * icmp_packet = (uint8_t *)malloc(len);
   struct sr_ethernet_hdr *new_packet_eth_hdr = (struct sr_ethernet_hdr *)icmp_packet;

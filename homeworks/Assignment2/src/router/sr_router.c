@@ -124,6 +124,7 @@ void sr_handlepacket(struct sr_instance* sr,
         printf("IT'S FOR US\n");
         struct sr_arpreq *request_queue = sr_arpcache_insert(&sr->cache, packet_arp_hdr->ar_sha, packet_arp_hdr->ar_sip);
         if (request_queue) {
+          printf("There were others waiting\n");
           struct sr_packet *queued_packet = request_queue->packets;
           while (queued_packet) {
             struct sr_ethernet_hdr *queued_packet_eth_hdr = (struct sr_ethernet_hdr *)queued_packet->buf;

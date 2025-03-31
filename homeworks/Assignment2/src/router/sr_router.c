@@ -330,7 +330,7 @@ void send_arpreq(struct sr_instance* sr,
 
   struct sr_if *iface = sr_get_interface(sr, request->packets->iface);
   //Set the ethernet header fields
-  memset(arp_reply_eth_hdr->ether_dhost, 0x00, ETHER_ADDR_LEN);
+  memset(arp_reply_eth_hdr->ether_dhost, 0xFF, ETHER_ADDR_LEN);
   memcpy(arp_reply_eth_hdr->ether_shost, iface->addr, ETHER_ADDR_LEN);
   arp_reply_eth_hdr->ether_type = htons(ethertype_arp);
 
@@ -342,7 +342,7 @@ void send_arpreq(struct sr_instance* sr,
   arp_reply_arp_hdr->ar_op = htons(arp_op_request);
   memcpy(arp_reply_arp_hdr->ar_sha, iface->addr, ETHER_ADDR_LEN);
   arp_reply_arp_hdr->ar_sip = iface->ip;
-  memset(arp_reply_arp_hdr->ar_tha, 0xFF, ETHER_ADDR_LEN);
+  memset(arp_reply_arp_hdr->ar_tha, 0x00, ETHER_ADDR_LEN);
   arp_reply_arp_hdr->ar_tip = request->ip;
 
 //  arp_hdr_to_network(arp_reply_arp_hdr);

@@ -1,0 +1,99 @@
+midterm 2 review
+
+1. which fields do nats modify
+- source and dest IP addr
+- source and dest port numbers
+- headers checksum
+NOT: identification field or sequence number
+
+
+b. NATs
+- nat creates and maintains a mapping between the original <source IP, source port> and the translated <IP address, port> when the packet
+  is from host 1 to host 3
+
+
+c. The NAT does not modify the IP or TCP fields when host 1 sends a packet to host 2
+- True
+- if answered false, can send a regrade request
+
+
+2. IP Tunneling
+
+a. IP tunnel creates a virtual point-to-point link
+- True 
+
+b. tunnel entry router encapsulates the IPv6 packet inside an IPv4 packet addressed to the tunnel exit router
+
+3. 
+a. shortest path tree from a to all other nodes (this one was correct from my memory)
+
+b. benefits of link-state over distance vector
+- Converges faster
+- achieves global optimum and no loop in the result
+NOT: less traffic overhead
+
+c. list two possible solutions for finding the destination host address when building a forwarding table
+- learn and flood; ethernet LAN and home network
+- inject into routing protocol; enterprise network
+- disseminate using a different protocol; iBGP backbone network
+- directory service; some data centers
+
+4. routing convergence
+
+a. what problems happen before covergence in link state routing
+- lost packets due to blackholes and TTL expiry
+- looping packets consuming resources
+- out-of-order packets reaching the destination
+
+b. what is the limitation of using a finite infinity e.g. 16
+- struggles when routers are separated by more than 16 hops
+NOT: only works for count to infiinity cyucles of 2; makes it more difficult to announce routes externally; there is no limitation, solves the entire problem
+
+c. is there a unique and stable solution 
+- yes
+- 130, 30, 40, 20
+
+d. what happens if 40 is removed
+- becomes a bad gadget
+- no stable solution
+- path choice will loop
+
+5. BGP
+a. which path would host c use to reach host b
+- c > AS4 > AS3 > b
+
+b. which path would host a use to reach host c
+- a > AS2 > AS0 > AS1 > AS4 > c
+
+c. how does BGP prevent loops
+- path vector routing
+- BGP includes ASes who propagated the announcement
+- ASes can look for an AS repeated in the path
+
+d. which path would you expect packets to traverse from host a to host b and why?
+- a > AS2 > AS5 > b
+- Gao-Rexford policies: prefer routes through customers over routes through peers and providers
+
+6. measurement
+a. give one reason measurement is crucial to network ops
+- network operations
+  - billing customers
+  - detecting, diagnosing, and fixing problems
+  - planning outlay of new equipment
+
+b. what method can be adopted to reduce per packet and per flow overhead
+- packet sampling
+
+
+7. anycast and multicast
+a. what is the benefit of multicast compared to iterative unicast
+- consumes less bandwidth in the network, sender does not work as hard
+
+b. the main difference between multi and any cast is that multicast sends to multiple hosts that opt into the group, while anycast sends to all hosts
+- false
+
+c. the reliable multicast protocols PGM and SRM use ACKs to achieve reliable data transmission over best effort network
+- false
+- they adopt NAK instead of ACK 
+
+

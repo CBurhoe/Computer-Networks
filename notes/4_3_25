@@ -1,0 +1,254 @@
+discovery and dns
+
+routing: mapping logical link to physical path
+
+discovery: mapping host name to ip address
+
+discovery
+
+directories
+- key value store
+  - key: name
+  - value: address
+  - answer queries: given name, return addresses
+- caching the response
+  - reuse the response, for a period of time
+  - better performance and lower overhead
+- allow entries to change
+  - updating the addresses associated with name
+  - invalidating or expiring cached responses
+
+directory design: three extremes
+- flood the query (e.g. ARP)
+  - send query to all users on the same network
+  - the named node responds with its address
+  - con: high overhead in large network
+    - same packet sent to all users
+- push data to all clients (/etc/hosts)
+  - all nodes store a full copy of the directory
+  - con: high overhead for many names and updates
+- central directory server
+  - all data and queries handled by one machine
+  - client who wants to access resource, send query to central server
+  - con: poor performance, scalability, and reliability
+
+
+strawman solution 1: local file
+- original name to address mapping
+  - flat namespace
+  - /etc/hosts
+  - network information center (defunct organization) kept main copy
+  - downloaded regularly
+- count of hosts was increasing
+  - moving from a machine per domain to machine per user
+  - many more downloads
+  - many more updates
+
+strawman solution 2: central server
+- central server
+  - one place where all mappings are stored
+  - all queries go to the central server
+- many practical problems
+  - single point of failure
+  - high traffic volume
+  - distant centralized database
+    - introduces high latency for distant requesters
+  - single point of update
+    - pro and con actually
+  - does not scale
+
+- need a distributed and hierarchical solution
+
+
+directory design: distributed solutions
+- hierarchical directory (e.g. DNS)
+  - follow hierarchy in the name space
+  - distribute directory, distribute queries
+  - enable decentralized updates to the directory
+- distributed hash table (e.g. P2P apps, Chord protocol)
+  - key = hash(data)
+  - lookup(key) -> IP addr (Chord lookup service)
+  - send-RPC(IP addr, put, key, data)
+  - send-RPC(IP addr, get, key) -> data
+
+Domain Name System (DNS)
+- properties
+  - hierarchical name space divided into zones
+  - distributed over a collection of DNS servers
+- hierarchy of DNS server
+  - root servers
+  - top-level domain (TLD) servers
+  - authoritative DNS servers
+- performing the translations
+  - local dns servers and client resolvers
+
+distributed heirarchical database
+- root (unnamed)
+  - empty '.'
+- generic or country TLD (top-level domain)
+  - '.com'
+  - '.edu'
+  - '.uk'
+- more names
+  - '.jhu'
+  - '.cs'
+- authoritative DNS server
+  - 'www'
+
+DNS Root servers
+- 13 root servers
+- labeled A through M - most are IP anycasted
+
+TLD and authoritative DNS servers
+- TLD servers
+  - generic (gTLD)
+    - .com
+    - .org
+    - .edu
+  - country code (ccTLD)
+    - .uk
+    - .fr
+    - .ca
+    - .jp
+  - managed professionally
+    - Verisign for .com and .net
+- authoritative DNS servers
+  - provide public records for hosts at an organization
+  - for the organization's servers (e.g. web and mail)
+  - can be maintained locally or by a service providers
+
+
+reliability
+- DNS servers are replicated
+  - name service available if at least one replica is up
+  - queries can be load balanced between replicas
+  $ dig NS nytimes.com +norecurse
+- UDP used for queries originally
+  - don't want overhead of three-way handshake
+  - need reliability: must implement this on top of UDP
+- try alternative servers on timeout
+  - exponential backoff when retrying same server
+- same identifier for all queries
+  - don't care which server responds
+
+dns queries and caching
+
+using dns
+- local dns server ("default name server")
+  - usually nead the end hosts who use it
+  - local host configured with local server (e.g. /etc/resolv.conf) or learn the server via DHCP
+  - JHU CS uses 10.200.1.1 & 10.200.2.2
+- client application
+  - extract server name (e.g. from the URL)
+  - do gethostbyname() or getaddrinfo() to get address
+- server app
+  - extract client IP address from socket
+  - optional gethostbyaddr() to translate this name
+
+dns resource records (RR)
+RR format: (name, value, type, ttl)
+most common types:
+- type=A
+  - name: hostname
+  - value: IP addr
+- type=NS
+  - name: domain
+  - value: hostname of name server for domain
+- type=CNAME
+  - name: alias for some canonical name
+  - value: canonical name
+  - widely used in CDN
+- type=MX
+  - value: name of mail server associated with name
+
+dns queries
+- host a.cs.jhu.edu want IP address for www.ucsd.edu
+- query local dns server
+  - dns.cs.jhu.edu
+- passes query to local dns server
+  - dns.jhu.edu
+  - tries to solve mapping
+- pass to root dns server for '.'
+- gets access to and passes query to TLD dns server for '.edu'
+- gets access to and passes query to authoritative dns server for ucsd.edu
+  - dns.ucsd.edu
+- return IP mapping for www.ucsd.edu
+
+dns caching
+- dns query latency
+  - e.g. 1 second latency before starting a download
+- cache to reduce overhead and delay
+  - small number of top-level servers that change rarely
+  - popular sites visited often
+- where to cache
+  - local dns server
+  - browser
+
+dns cache consistency
+- goal: ensuring cached data is up to date
+- dns design considerations
+  - cached data is "read only"
+  - explicit invalidation would be expensive
+    - server would need to keep track of all resolvers caching
+- avoiding stale info
+  - responses include a ttl field
+  - delete cached entry after ttl expires
+- perform negative caching (negative responses for dead links, misspellings)
+  - so failures quick and don't overload gTLD servers
+
+setting ttl
+- tradeoffs
+  - small ttl: 
+    - fast response to change
+    - high number of cache misses
+  - large ttl: 
+    - higher cache hit rate
+    - not as responsive to change
+- follow the hierarchy
+  - top of hierarchy: days or weeks
+  - bottom of hierarchy: seconds to hours
+- tension in practice
+  - CDNs set low ttls for load baancing and failover
+  - ...
+
+
+inserting resource records into dns
+- e.g.: startup FooBar
+- register foobar.com at namecheap.com
+  - provide registrar with names and IP addresses of authoritative name server (primary and secondary)
+  - registrar inserts two RRs into the .com TLD server
+    - (foobar.com, dns1.foobar.com, NS)
+    - (dns1.foobar.com, 212.212.212.1, A)
+- put in authoritative server dns1.foobar.com
+  - type A record for www.foobar.com
+  - mx record for foobar.com
+
+dns attacks
+- plain text for query and response
+- dns cache poisoning
+  - client: ask for www.cnn.com
+  - attacker responds with additional section for (www.cnn.com, www.evil.com, CNAME)
+  - client/resolver: Thanks! I won't bother checking what I asked for
+- dns hijacking
+  - attacker sends forged dns rpely to client for www.cnn.com, even when they don't receive the request
+  - how to prevent?
+    - client creates a 16-bit query ID
+    - client only accepts reply if ID matches query ID
+  - 16 bits: 65k possible IDs
+    - what rate for attacker to enumerate all in 1 sec? 64B/packet
+    - 64*65536*8/1024/1024 = 32Mbps
+  - prevention: also randomize DNS source port
+    - e.g. windows dns alloc's 2500 dns ports, leads to ~164M possible IDs
+    - would required 80Gbps
+    - kaminsky attack: this source port...wasn't random after all
+
+
+conclusion
+- dns is a key part of the internet, maps names to addresses and much more
+  - directory, indirection
+  - hierarchy
+  - caching
+- anycast + dns = building blocks for
+  - web protocols
+  - content distribution networks
+

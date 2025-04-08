@@ -1,0 +1,194 @@
+http
+
+two forms of header formats
+- fixed: every field (type, length) defined
+  - fast parsing (good for hardware implementations)
+  - not human readable
+  - fairly static (IPv6 ~25 years to deploy)
+  - e.g., ethernet, IP, TCP headers
+- variable length headers
+  - slower parsing (harder to implement in hardware)
+  - human readable
+  - extensible
+  - e.g., HTTP (web), SMTP (email), XML
+
+http basics
+- HTTP over bidirectional byte stream (1.0, 1.1, 2.0: TCP, 3: QUIC)
+- interaction
+  - client looks up host (DNS)
+  - client sends request to server
+  - server responds with data or error
+  - requests/responses are encoded in text
+- http protocol was designed as stateless
+  - http maintains no info about client requests, simplifies the server
+  - http "cookies" allow server to identify client and associate requests into a client session
+
+http request and response
+
+http request
+- request line
+  - method
+    GET - only retrieve data
+    HEAD - return metedata (header when using GET)
+    POST - send data to the server (forms, etc)
+  - URL (relative)
+    - absolute url used during conneciton:
+      http://www.example.com/index.html
+    - easier to handle the change
+  - HTTP version
+e.g. GET /index.html HTTP/1.1
+- request headers
+  - variable length, human-readable
+  - uses
+    - authorization - auth info
+    - acceptable document types/encodings
+    - from - user email
+    - if-modified-since
+    - referer - what caused this page to be requested
+    - user-agent - client software (web browser, apps)
+- blank line
+- body
+e.g.
+  GET /index.html HTTP/1.1
+  Host: www.example.com
+  Accept-Language: en-us
+  Accept-Encoding: gzip, deflate
+  User-Agent: Mozilla/4.0 (compatible; MSIE 5.5; Windows NT 5.0)
+  Connection: Keep-Alive
+
+
+HTTP response
+- status-line
+  - HTTP version (1.1, 2, 3 are common)
+  - 3 - digit response code
+    - 1XX - informational
+    - 2XX - success (200 OK)
+    - 3XX - redirection (301 permanent, 302 temporarily, 304 not modified)
+    - 4XX - client error (404 not found)
+    - 5XX - server error (505 HTTP version not supported)
+  - reason phrase (textual description for the response code)
+- headers
+  - location - for redirection
+  - server - server software
+  - www-authenticate - request for auth
+  - allow - list of methods supported
+  - content-encoding - e.g. x-gzip
+  - content-type
+  - content-length
+- blank line
+- body
+
+
+proxies
+- end host that acts as a broker between client and server
+  - speaks to server on client's behalf
+- why
+  - privacy
+  - content filtering
+  - caching
+- accept requests from multiple clients
+- takes request and reissues it to server
+- takes response and forwards to client
+
+http caching
+- why cache
+  - lot of objects that don't change (images, js, css)
+  - reduce number of client connections
+  - reduce server load
+  - reduce overall network traffic; save money
+
+caching is hard
+- significant fraction (>50%) of distinct HTTP objects may be uncacheable
+  - dynamic data: stock prices, scores, live video
+  - CGI scripts: results based on passed parameters
+  - cookies: results may be based on past data
+  - SSL: encrypted data not cacheable
+  - advertising/analytics: owner wants to measure the number of hits
+    - random strings in content to ensure unique counting
+- yet significant fraction of HTTP bytes are cacheable
+(...)
+
+how long to cache for
+- clients (and proxies) cache documents
+  - when should origin be checked for changes?
+  - every time? every session? date?
+- HTTP includes caching info in headers
+  - HTTP 0.9/1.0: "Expires <date>"
+  - HTTP/1.1: "Cache-Control"
+    - "No-Cache", "Max-age: <seconds>"
+    - "ETag: <opaque value>"
+  - from absolute time to relative (client and server not synchronized)
+
+what if cache expires
+- store past expiry time (if room in cache)
+- upon request, first revalidate with server
+
+
+HTTP transfer = single objects
+web pages     = many objects
+
+
+how to handle many requests
+- maximize goodput by reusing connections
+  - avoid connection (TCP) setup
+  - avoid TCP slow start
+- client-server will maintain existing TCP connection for up to K idle seconds
+
+three approaches to multiple requests
+- parallel connections
+  - multiple requests, each building up a connection
+- persistent
+  - multiple requests on same connection
+  - sequential
+  - wait for response before next response
+- pipeline
+  - multiple requests at once before receiving responses
+  - sequential
+  - don't wait for responses before sending requests
+
+
+persistent connections avoid unneccessary slow starts
+
+how to mark end of message
+- close connection
+  - only server can do this
+  - one request per TCP connection. hurts performance
+- content-length (like other layers)
+  - must know size of transfer in advance
+- no body content. double CRLF marks end
+  - e.g., 304 never has body content
+- transfer-encoding: chunked (HTTP/1.1)
+  - after headers, each chunk is content length in hex, CRLF, then body
+  - final chunk is length 0
+
+chunked encoding
+- especially useful for dynamically generated content, as length is not a priori known
+  - server would otherwise need to cache data until done generating, then go back and fill in length header before transmitting
+
+challenges of pipelining
+- head-of-line blocking
+  - small transfers can "block" behind large transfer
+- no reordering
+  - HTTP response does not "identify" which request it's in response to
+- can behave worse than parallel + persistent
+  - can send expensive query 1 on connection 1, while sending many cheap queries on connection 2
+
+google SPDY -> HTTP/2.0
+- server "push" for content
+  - one client request, multiple resonses
+  - after all, server knows that after parsing HTML, client will immediately request embedded URLs
+- better pipelining and transfer
+  - multiplexing multiple transfers witout head-of-line blocking
+  - request prioritization
+  - header compression
+
+summary
+- http: dominant application layer protocol for web
+  - request and response
+  - encoded in text
+- proxy and cache
+  - CDN next time
+- recent optimization and evolution of HTTP for performance and efficiency
+  - transport protocol, persistent, pipeline
+
+

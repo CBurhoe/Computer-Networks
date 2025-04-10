@@ -48,7 +48,7 @@ int
 main(int argc, char *argv[])
 {
     struct sockaddr_in sin;
-    char opt;
+    int opt;
     char *pline;
     int errflg = 0;
     int sd;
@@ -59,7 +59,7 @@ main(int argc, char *argv[])
     /* Parse command line options */
     while ((opt = getopt(argc, argv, "f:q")) != EOF)
     {
-        switch (opt)
+        switch ((char) opt)
         {
         case 'f':
             filename = optarg;

@@ -15,6 +15,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <arpa/inet.h>
 #include "mysock.h"
 #include "stcp_api.h"
 #include "transport.h"
@@ -40,6 +41,7 @@ typedef struct
 
 static void generate_initial_seq_num(context_t *ctx);
 static void control_loop(mysocket_t sd, context_t *ctx);
+STCPHeader *make_syn_packet(context_t *ctx);
 
 
 /* initialise the transport layer, and start the main loop, handling
@@ -65,6 +67,9 @@ void transport_init(mysocket_t sd, bool_t is_active)
 
     if (is_active) {
         // send syn packet
+	STCPHeader *syn_pack = make_syn_packet(ctx);
+	size_t syn_pack_len = sizeof(STCPHeader);
+	ssize_t bytes_sent = stcp_network_send(sd, syn_pack, syn_pack_len, NULL);
 
         // wait for syn ack
 
@@ -141,6 +146,16 @@ static void control_loop(mysocket_t sd, context_t *ctx)
     }
 }
 
+tcphdr* make_syn_packet(context_t *ctx) {
+	STCPHeader *syn_pack = (STCPHeader *)malloc(sizeof(STCPHeader));
+	memset(syn_pack, 0, sizeof(STCPHeader));
+	syn_pack->th_seq = htonl(ctx->initial_sequence_num);
+	syn_pack->th_ack = 0;
+	syn_pack->th_off = 5;
+	syn_pack->th_flags = TH_SYN;
+	syn_pack->th_win = htons(3072);
+	return syn_pack;
+}
 
 /**********************************************************************/
 /* our_dprintf

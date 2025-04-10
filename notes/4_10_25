@@ -1,0 +1,178 @@
+content distribution networks
+
+distance has a major effect on throughput and download time
+
+why web caching?
+
+single server, poor performance
+- single server
+  - single point of failure
+    - any outage prevents serving any users
+  - easily overloaded
+  - far from most clients
+- popular content
+  - popular site
+  - DoS attack
+    - not malicious or intentional
+    - more traffic than server can handle
+
+documents with low rank are accessed much more than documents with high rank
+
+proxy caches
+
+forward proxy
+- cache "close" to client
+  - under administrative control of client side AS
+- explicit proxy
+  - requires configuring browser
+- implicit proxy
+  - service provider deploys "on-path" proxy
+  - proxy intercepts and handles web requests
+
+
+reverse proxy
+- cache "close" to server
+  - act as the origin server for all clients
+  - hide real origin server (firewall)
+  - third-party content distribution network (CDN)
+- directing clients to the proxy
+  - DNS map the site name to the IP address of the proxy
+
+
+CDNs
+Goal: deploy servers as close to end users as possible
+
+
+CDN
+- proactive content replication
+  - content provider contracts with CDN provider
+- CDN replicates the content
+  - on many servers spread throughout the Internet
+- updating the replicas
+  - reactive by TTL or updates pushed to replicas when the content changes
+
+
+server selection by policy
+- live server
+  - for availability
+- lowest load
+  - to balance across the servers
+- closest
+  - nearest geographically or RTT
+- best performance
+  - throughput, latency
+- cheapest bandwidth, electricity
+- requires continuous monitoring of liveness, load, and performance
+
+server selection mechanism
+- application
+  - HTTP redirection
+- advantages
+  - fine-grain control
+  - selection based on client IP address
+- disadvantages
+  - extra round trip for TCP connection to server
+  - overhead on the server
+
+server selection mechanism
+- routing
+  - anycast routing
+- advantages
+  - no extra round trips
+  - route to nearby server
+- disadvantages
+  - does not consider network or server load
+  - different packets may go to different servers
+
+server selection mechanism
+- naming
+  - DNS based server selection
+- advantages
+  - avoid TCP setup delay
+    - DNS based on UDP
+  - DNS caching reduces overhead
+  - relatively fine control
+- disadvantages
+  - based on IP address of local DNS server, rather than client
+  - DNS TTL limits adaptation
+
+
+how akamai works
+
+akamai statistics (according to akamai)
+- distributed servers
+  - servers: ~365,000
+  - networks: ~1,350
+  - countries: 134
+- many customers
+  - >50% of fortune global 500
+- network
+  - >50 Tbps daily
+  - peaked at 250 Tbps
+  - can handle >25 million concurrent viewers
+  - ~85% of Internet is on network hop from akamai servers
+
+akamai
+- uses DNS for server selection
+- see slide 24
+
+mapping system
+- equivalence classes of IP addresses
+  - IP addresses experiencing similar performance
+  - quantify how well they connect to the servers
+- collect and combine measurements
+  - ping, traceroute, BGP routes, server logs
+    - e.g. over 100 TB of logs per day
+  - network latency, loss, and connectivity
+
+routing client requests within map
+- map each IP class to a preferred server cluster
+  - based on performance, cluster health, etc
+  - updated rougly every minute
+    - short, 60 second DNS TTLs in akamai regional DNS
+- map client request to a server in the cluster
+  - load balancer selects a specific server
+  - e.g. to maximize the cache hit rate
+
+selecting server inside cluster
+- traditional hashing
+  - server <- hash(object key) mod number of servers
+- what if the number of servers changed
+  - nearly all data needs to be rearranged
+- consistent hashing
+  - content_key = hash(object key)
+  - node_key = hash(server ID)
+  - content belongs to server's node_key "closest" to URL's content_key
+
+adapting to failures
+- failing hard drive on server
+  - suspends after finishing in progress requests
+- failed server
+  - another server takes over for the IP address
+  - low-level map updated quickly
+- failed cluster or network path
+  - high-level map updated quickly
+
+akamai transport optimizations
+- bad internet routes
+  - overlay (textbook 9.4) routing through an intermediate server
+- packet loss
+  - sending redundant data overmultiple paths
+- TCP connection setup/teardown
+  - pools of persistent connections
+- TCP congestion window and RTT
+  - estimates based on network latency measurements
+- large objects
+  - content compression
+
+conclusion
+- content distribution is hard
+  - many diverse changing object
+  - clients distributed all over the world
+- moving content toward client is key
+  - reduces latency, improves throughput and reliability
+- content distribution solutions evolved
+  - reactive caching, load balancing
+  - proactive content distribution networks
+
+

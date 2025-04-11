@@ -42,6 +42,7 @@ typedef struct
 static void generate_initial_seq_num(context_t *ctx);
 static void control_loop(mysocket_t sd, context_t *ctx);
 STCPHeader *make_syn_packet(context_t *ctx);
+STCPHeader *make_ack_packet(tcp_seq seq_num, tcp_seq ack_num);
 
 
 /* initialise the transport layer, and start the main loop, handling
@@ -76,7 +77,21 @@ void transport_init(mysocket_t sd, bool_t is_active)
 	uint8_t *recv_packet = (uint8_t *)malloc(sizeof(STCPHeader));
 	ssize_t recv_packet_bytes = stcp_network_recv(sd, recv_packet, sizeof(STCPHeader));
 
-        // send ack
+	STCPHeader *syn_ack_packet = (STCPHeader *)recv_packet;
+
+	if (syn_ack_packet->th_flags != (TH_SYN | TH_ACK)) {
+		//TODO: Handle missing SYN + ACK flags
+	}
+	if (syn_ack_packet->th_ack != ctx->initial_sequence_num) {
+		//TODO: Handle bad ack number
+	}
+	tcp_seq ack_num = syn_ack_packet->th_ack;
+	tcp_seq receiver_seq_number = syn_ack_packet->th_seq;
+        
+	// send ack
+	STCPHeader *ack_pack = make_ack_packet(receiver_seq_number, ack_num);
+	size_t ack_pack_len = sizeof(STCPHeader);
+	ssize_t ack_bytes_sent = stcp_network_send(sd, ack_pack, ack_pack_len, NULL);
 
     } else {
         // wait for syn
@@ -158,6 +173,18 @@ tcphdr* make_syn_packet(context_t *ctx) {
 	syn_pack->th_flags = TH_SYN;
 	syn_pack->th_win = htons(3072);
 	return syn_pack;
+}
+
+STCPHeader *make_ack_packet(tcp_seq seq_num, tcp_seq ack_num) {
+	//TODO: create ack packet using seq and ack numbers from SYN ACK packet
+	STCPHeader *ack_pack = (STCPHeader *)malloc(sizeof(STCPHeader));
+	memset(ack_pack, 0, sizeof(STCPHeader));
+	ack_pack->th_seq = 0; //FIXME: Possibly initial_sequence_num + 1 but don't know
+	ack_pack->th_ack = seq_num; //FIXME: I think ack num = last seq but I may be wrong
+	ack_pack->th_off = 5;
+	ack_pack->th_flags = TH_ACK;
+	ack_pack->th_win = 0; //FIXME: no idea what the new window val is
+	return ack_pack;
 }
 
 /**********************************************************************/

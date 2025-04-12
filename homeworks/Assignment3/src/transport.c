@@ -202,6 +202,7 @@ STCPHeader  *make_syn_packet(context_t *ctx) {
 	syn_pack->th_off = 5;
 	syn_pack->th_flags = TH_SYN;
 	syn_pack->th_win = htons(3072);
+	ctx->sender_last_sequence_num = ctx->initial_sequence_num;
 	return syn_pack;
 }
 
@@ -209,7 +210,7 @@ STCPHeader *make_ack_packet(tcp_seq seq_num, tcp_seq ack_num, context_t *ctx) {
 	//TODO: create ack packet using seq and ack numbers from SYN ACK packet
 	STCPHeader *ack_pack = (STCPHeader *)malloc(sizeof(STCPHeader));
 	memset(ack_pack, 0, sizeof(STCPHeader));
-	ack_pack->th_seq = htonl(ctx->initial_sequence_num + 1); //FIXME: Possibly initial_sequence_num + 1 but don't know
+	ack_pack->th_seq = htonl(ctx->sender_last_sequence_num + 1); //FIXME: Possibly initial_sequence_num + 1 but don't know
 	ack_pack->th_ack = htonl(seq_num + 1); //FIXME: I think ack num = last seq but I may be wrong
 	ack_pack->th_off = 5;
 	ack_pack->th_flags = TH_ACK;

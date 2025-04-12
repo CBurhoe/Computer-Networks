@@ -116,6 +116,15 @@ void transport_init(mysocket_t sd, bool_t is_active)
     	ssize_t ack_bytes_sent = stcp_network_send(sd, ack_pack, ack_pack_len, NULL);
 
         // wait for ack
+    	event_mask = stcp_wait_for_event(sd, NETWORK_DATA, NULL); //FIXME: probably don't want to block forever
+    	recv_packet_bytes = stcp_netork_recv(sd, recv_packet, sizeof(STCPHeader));
+    	STCPHeader *ack_packet = (STCPHeader *)recv_packet;
+
+    	if (ack_packet->th_flags != TH_ACK) {
+    		//TODO: Handle missing ACK flag
+    	}
+    	ack_num = ack_packet->th_ack;
+    	receiver_seq_number = ack_packet->th_seq;
 
     }
     ctx->connection_state = CSTATE_ESTABLISHED;

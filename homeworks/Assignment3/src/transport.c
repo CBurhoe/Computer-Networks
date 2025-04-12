@@ -42,7 +42,7 @@ typedef struct
 static void generate_initial_seq_num(context_t *ctx);
 static void control_loop(mysocket_t sd, context_t *ctx);
 STCPHeader *make_syn_packet(context_t *ctx);
-STCPHeader *make_ack_packet(tcp_seq seq_num, tcp_seq ack_num);
+STCPHeader *make_ack_packet(tcp_seq seq_num, tcp_seq ack_num, context_t *ctx);
 STCPHeader *make_syn_ack_packet(context_t *ctx, tcp_seq syn_num);
 
 
@@ -90,7 +90,7 @@ void transport_init(mysocket_t sd, bool_t is_active)
 		tcp_seq receiver_seq_number = syn_ack_packet->th_seq;
         
 		// send ack
-		STCPHeader *ack_pack = make_ack_packet(receiver_seq_number, ack_num);
+		STCPHeader *ack_pack = make_ack_packet(receiver_seq_number, ack_num, ctx);
 		size_t ack_pack_len = sizeof(STCPHeader);
 		ssize_t ack_bytes_sent = stcp_network_send(sd, ack_pack, ack_pack_len, NULL);
 

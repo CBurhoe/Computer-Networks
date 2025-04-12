@@ -47,7 +47,7 @@ static void control_loop(mysocket_t sd, context_t *ctx);
 STCPHeader *make_syn_packet(context_t *ctx);
 STCPHeader *make_ack_packet(tcp_seq seq_num, tcp_seq ack_num, context_t *ctx);
 STCPHeader *make_syn_ack_packet(context_t *ctx, tcp_seq syn_num);
-void construct_data_packet(context_t *ctx, STCPHeader *send_packet_header, void *send_buff, size_t send_buff_len, void *app_data, size_t app_data_len);
+void construct_data_packet(context_t *ctx, STCPHeader *send_packet_header, uint8_t *send_buff, size_t send_buff_len, void *app_data, size_t app_data_len);
 
 
 
@@ -254,7 +254,7 @@ STCPHeader *make_syn_ack_packet(context_t *ctx, tcp_seq syn_num) {
 	return syn_ack_pack;
 }
 
-void construct_data_packet(context_t *ctx, STCPHeader *send_packet_header, void *send_buff, size_t send_buff_len, void *app_data, size_t app_data_len) {
+void construct_data_packet(context_t *ctx, STCPHeader *send_packet_header, uint8_t *send_buff, size_t send_buff_len, void *app_data, size_t app_data_len) {
 	// Set header fields
 	send_packet_header->th_seq = htonl(ctx->sender_next_sequence_num);
 	send_packet_header->th_ack = htonl(ctx->receiver_last_sequence_num + 1); //FIXME: maybe not

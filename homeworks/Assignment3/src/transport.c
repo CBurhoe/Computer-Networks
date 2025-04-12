@@ -208,11 +208,13 @@ static void control_loop(mysocket_t sd, context_t *ctx)
 
 		stcp_app_send(sd, data_for_app, data_len);
 
+		//TODO: ACK the packet(s)
+
 		free(network_packet);
         }
 
         if (event & APP_CLOSE_REQUESTED) {
-
+		
         }
 
         /* etc. */

@@ -189,9 +189,19 @@ static void control_loop(mysocket_t sd, context_t *ctx)
 		size_t app_data_len = stcp_app_recv(sd, app_data, STCP_MSS);
 		//TODO: need to handle app sending more data than STCP_MSS
 		if (app_data_len > 0) {
-			send_data_packet(sd, ctx, app_data, app_data_len);
-			ctx->sender_last_sequence_num = ctx->sender_next_sequence_num;
-			ctx->sender_next_sequence_num += app_data_len;
+			size_t in_flight = ctx->sender_next_sequence_num - ctx->receiver_last_ack;
+			size_t space_left = 0;
+			if (ctx->receiver_win > in_flight) {
+				space_left = ctx->receiver_win - in_flight;
+			}
+			if (space_left > app_data_len) {
+				space_left = app_data_len;
+			}
+			if (space_left > 0) {
+				send_data_packet(sd, ctx, app_data, app_data_len);
+				ctx->sender_last_sequence_num = ctx->sender_next_sequence_num;
+				ctx->sender_next_sequence_num += space_left;
+			}
 		}
 		free(app_data);
        	}

@@ -193,6 +193,8 @@ static void control_loop(mysocket_t sd, context_t *ctx)
 			STCPHeader *send_packet_header = (STCPHeader *)send_buff;
 			construct_data_packet(ctx, send_packet_header, send_buff, send_buff_len, app_data, app_data_len);
 			ssize_t send_bytes = stcp_network_send(sd, send_buff, send_buff_len, NULL);
+
+			free(app_data);
         }
 
         if (event & NETWORK_DATA) {
@@ -252,7 +254,7 @@ void construct_data_packet(context_t *ctx, STCPHeader *send_packet_header, void 
 	send_packet_header->th_flags = 0;
 	send_packet_header->th_win = 0; //FIXME: need to set window
 	// Copy data
-	memcpy(send_buff + 20, app_data, app_data_len);
+	memcpy(send_buff + sizeof(STCPHeader), app_data, app_data_len);
 }
 
 

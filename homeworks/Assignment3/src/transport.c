@@ -69,30 +69,30 @@ void transport_init(mysocket_t sd, bool_t is_active)
 
     if (is_active) {
         // send syn packet
-	STCPHeader *syn_pack = make_syn_packet(ctx);
-	size_t syn_pack_len = sizeof(STCPHeader);
-	ssize_t bytes_sent = stcp_network_send(sd, syn_pack, syn_pack_len, NULL);
+		STCPHeader *syn_pack = make_syn_packet(ctx);
+		size_t syn_pack_len = sizeof(STCPHeader);
+		ssize_t bytes_sent = stcp_network_send(sd, syn_pack, syn_pack_len, NULL);
 
         // wait for syn ack
-	unsigned int event_mask = stcp_wait_for_event(sd, NETWORK_DATA, NULL); //FIXME: probably don't want to block forever
-	uint8_t *recv_packet = (uint8_t *)malloc(sizeof(STCPHeader));
-	ssize_t recv_packet_bytes = stcp_network_recv(sd, recv_packet, sizeof(STCPHeader));
+		unsigned int event_mask = stcp_wait_for_event(sd, NETWORK_DATA, NULL); //FIXME: probably don't want to block forever
+		uint8_t *recv_packet = (uint8_t *)malloc(sizeof(STCPHeader));
+		ssize_t recv_packet_bytes = stcp_network_recv(sd, recv_packet, sizeof(STCPHeader));
 
-	STCPHeader *syn_ack_packet = (STCPHeader *)recv_packet;
+		STCPHeader *syn_ack_packet = (STCPHeader *)recv_packet;
 
-	if (syn_ack_packet->th_flags != (TH_SYN | TH_ACK)) {
-		//TODO: Handle missing SYN + ACK flags
-	}
-	if (syn_ack_packet->th_ack != ctx->initial_sequence_num) {
-		//TODO: Handle bad ack number
-	}
-	tcp_seq ack_num = syn_ack_packet->th_ack;
-	tcp_seq receiver_seq_number = syn_ack_packet->th_seq;
+		if (syn_ack_packet->th_flags != (TH_SYN | TH_ACK)) {
+			//TODO: Handle missing SYN + ACK flags
+		}
+		if (syn_ack_packet->th_ack != ctx->initial_sequence_num) {
+			//TODO: Handle bad ack number
+		}
+		tcp_seq ack_num = syn_ack_packet->th_ack;
+		tcp_seq receiver_seq_number = syn_ack_packet->th_seq;
         
-	// send ack
-	STCPHeader *ack_pack = make_ack_packet(receiver_seq_number, ack_num);
-	size_t ack_pack_len = sizeof(STCPHeader);
-	ssize_t ack_bytes_sent = stcp_network_send(sd, ack_pack, ack_pack_len, NULL);
+		// send ack
+		STCPHeader *ack_pack = make_ack_packet(receiver_seq_number, ack_num);
+		size_t ack_pack_len = sizeof(STCPHeader);
+		ssize_t ack_bytes_sent = stcp_network_send(sd, ack_pack, ack_pack_len, NULL);
 
     } else {
         // wait for syn

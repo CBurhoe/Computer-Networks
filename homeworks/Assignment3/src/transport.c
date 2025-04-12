@@ -22,8 +22,10 @@
 
 
 enum { 
-    CSTATE_ESTABLISHED
-
+    CSTATE_ESTABLISHED,
+    CSTATE_FIN_WAIT_1,
+    CSTATE_FIN_WAIT_2,
+    CSTATE_TIME_WAIT
 };    /* obviously you should have more states */
 
 
@@ -160,53 +162,83 @@ static void control_loop(mysocket_t sd, context_t *ctx)
         /* see stcp_api.h or stcp_api.c for details of this function */
         /* XXX: you will need to change some of these arguments! */
         event = stcp_wait_for_event(sd, ANY_EVENT, NULL);
+	switch(ctx->connection_state) {
+	case CSTATE_ESTABLISHED:
+        	/* check whether it was the network, app, or a close request */
+	        if (event & APP_DATA)
+        	{
+        	    	/* the application has requested that data be sent */
+	            	/* see stcp_app_recv() */
+			uint8_t *app_data = (uint8_t *)malloc(STCP_MSS);
+			size_t app_data_len = stcp_app_recv(sd, app_data, STCP_MSS);
+			//TODO: need to handle app sending more data than STCP_MSS
 
-        /* check whether it was the network, app, or a close request */
-        if (event & APP_DATA)
-        {
-            	/* the application has requested that data be sent */
-            	/* see stcp_app_recv() */
-		uint8_t *app_data = (uint8_t *)malloc(STCP_MSS);
-		size_t app_data_len = stcp_app_recv(sd, app_data, STCP_MSS);
-		//TODO: need to handle app sending more data than STCP_MSS
+			size_t send_buff_len = sizeof(STCPHeader) + app_data_len;
+			uint8_t *send_buff = (uint8_t *)malloc(send_buff_len);
 
-		size_t send_buff_len = sizeof(STCPHeader) + app_data_len;
-		uint8_t *send_buff = (uint8_t *)malloc(send_buff_len);
+			STCPHeader *send_packet_header = (STCPHeader *)send_buff;
+			construct_data_packet(ctx, send_packet_header, send_buff, send_buff_len, app_data, app_data_len);
+			ssize_t send_bytes = stcp_network_send(sd, send_buff, send_buff_len, NULL);
 
-		STCPHeader *send_packet_header = (STCPHeader *)send_buff;
-		construct_data_packet(ctx, send_packet_header, send_buff, send_buff_len, app_data, app_data_len);
-		ssize_t send_bytes = stcp_network_send(sd, send_buff, send_buff_len, NULL);
+			free(send_buff);
+			free(app_data);
+        	}
 
-		free(send_buff);
-		free(app_data);
-        }
+        	if (event & NETWORK_DATA) {
+	            	/* received data from STCP peer */
+			size_t max_packet_len = STCP_MSS + sizeof(STCPHeader);
+			uint8_t *network_packet = (uint8_t *)malloc(max_packet_len);
+			size_t network_packet_len = stcp_network_recv(sd, network_packet, max_packet_len); //FIXME: May need to handle multiple network segments
+			size_t data_len = network_packet_len - sizeof(STCPHeader);
+			uint8_t *data_for_app = (uint8_t *)malloc(data_len);
+			memcpy(data_for_app, network_packet + sizeof(STCPHeader), data_len);
 
-        if (event & NETWORK_DATA) {
-            	/* received data from STCP peer */
-		size_t max_packet_len = STCP_MSS + sizeof(STCPHeader);
-		uint8_t *network_packet = (uint8_t *)malloc(max_packet_len);
-		size_t network_packet_len = stcp_network_recv(sd, network_packet, max_packet_len); //FIXME: May need to handle multiple network segments
-		size_t data_len = network_packet_len - sizeof(STCPHeader);
-		uint8_t *data_for_app = (uint8_t *)malloc(data_len);
-		memcpy(data_for_app, network_packet + sizeof(STCPHeader), data_len);
+			stcp_app_send(sd, data_for_app, data_len);
 
-		stcp_app_send(sd, data_for_app, data_len);
+			//TODO: ACK the packet(s)
+			free(data_for_app);
+			free(network_packet);
+        	}
 
-		//TODO: ACK the packet(s)
-		free(data_for_app);
-		free(network_packet);
-        }
+        	if (event & APP_CLOSE_REQUESTED) {
+			STCPHeader *fin_packet = make_fin_packet(ctx);
+			stcp_network_send(sd, fin_packet, sizeof(STCPHeader), NULL);
+			free(fin_packet);		
 
-        if (event & APP_CLOSE_REQUESTED) {
-		STCPHeader *fin_packet = make_fin_packet(ctx);
-		ssize_t bytes_sent = stcp_network_send(sd, fin_packet, sizeof(STCPHeader), NULL);
-		free(fin_packet);		
+			ctx->sender_next_sequence_num += 1;
+			ctx->connection_state = CSTATE_FIN_WAIT_1;
 
-		ctx->sender_next_sequence_num += 1;
+        	}
+		break;
 
-        }
-
-        /* etc. */
+        	/* etc. */
+	case CSTATE_FIN_WAIT_1:
+		if (event & NETWORK_DATA) {
+			STCPHeader ack_or_fin;
+			stcp_network_recv(sd, &ack_or_fin, sizeof(STCPHeader)); //FIXME: might be more data
+			if (ack_or_fin.th_flags & TH_FIN) {
+				STCPHeader *ack_pack = make_ack_packet(ctx->sender_last_sequence_num, ntohl(ack_or_fin.th_seq), ctx);
+				stcp_network_send(sd, &ack_pack, sizeof(STCPHeader), NULL);
+				ctx->connection_state = CSTATE_TIME_WAIT;
+				ctx->done = TRUE;
+			} else if (ack_or_fin.th_flags & TH_ACK) {
+				ctx->connection_state = CSTATE_FIN_WAIT_2;
+			}
+		}
+		break;
+	case CSTATE_FIN_WAIT_2:
+		if (event & NETWORK_DATA) {
+			STCPHeader fin_pack;
+			stcp_network_recv(sd, &fin_pack, sizeof(STCPHeader)); //FIXME: might be more data
+			if (fin_pack.th_flags & TH_FIN) {
+				STCPHeader *ack_pack = make_ack_packet(ctx->sender_last_sequence_num, ntohl(fin_pack.th_seq), ctx);
+				stcp_network_send(sd, &ack_pack, sizeof(STCPHeader), NULL);
+				ctx->connection_state = CSTATE_TIME_WAIT;
+				ctx->done = TRUE;
+			}
+		}
+		break;
+	}
     }
 }
 

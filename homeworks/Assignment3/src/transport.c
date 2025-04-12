@@ -107,7 +107,7 @@ void transport_init(mysocket_t sd, bool_t is_active)
     	}
 
     	tcp_seq receiver_ack_num = syn_packet->th_ack;
-    	tcp_seq receiver_seq_number = syn_packet->th_seq;
+    	tcp_seq receiver_seq_num = syn_packet->th_seq;
 
 
         // send syn ack
@@ -125,7 +125,7 @@ void transport_init(mysocket_t sd, bool_t is_active)
     		//TODO: Handle missing ACK flag
     	}
     	receiver_ack_num = ack_packet->th_ack;
-    	receiver_seq_number = ack_packet->th_seq;
+    	receiver_seq_num = ack_packet->th_seq;
 
     }
     ctx->connection_state = CSTATE_ESTABLISHED;

@@ -43,6 +43,7 @@ static void generate_initial_seq_num(context_t *ctx);
 static void control_loop(mysocket_t sd, context_t *ctx);
 STCPHeader *make_syn_packet(context_t *ctx);
 STCPHeader *make_ack_packet(tcp_seq seq_num, tcp_seq ack_num);
+STCPHeader *make_syn_ack_packet(context_t *ctx, tcp_seq ack_num);
 
 
 /* initialise the transport layer, and start the main loop, handling
@@ -190,17 +191,6 @@ static void control_loop(mysocket_t sd, context_t *ctx)
     }
 }
 
-STCPHeader *make_syn_ack_packet(context_t *ctx, tcp_seq ack_num) {
-	STCPHeader *syn_ack_pack = (STCPHeader *)malloc(sizeof(STCPHeader));
-	memset(syn_ack_pack, 0, sizeof(STCPHeader));
-	syn_ack_pack->th_seq = htonl(ctx->initial_sequence_num);
-	syn_ack_pack->th_ack = htonl(ack_num);
-	syn_ack_pack->th_off = 5;
-	syn_ack_pack->th_flags = TH_SYN | TH_ACK;
-	syn_ack_pack->th_win = htons(3072); //FIXME: don't know if it's still the same
-	return syn_ack_pack;
-}
-
 STCPHeader  *make_syn_packet(context_t *ctx) {
 	STCPHeader *syn_pack = (STCPHeader *)malloc(sizeof(STCPHeader));
 	memset(syn_pack, 0, sizeof(STCPHeader));
@@ -222,6 +212,17 @@ STCPHeader *make_ack_packet(tcp_seq seq_num, tcp_seq ack_num) {
 	ack_pack->th_flags = TH_ACK;
 	ack_pack->th_win = 0; //FIXME: no idea what the new window val is
 	return ack_pack;
+}
+
+STCPHeader *make_syn_ack_packet(context_t *ctx, tcp_seq ack_num) {
+	STCPHeader *syn_ack_pack = (STCPHeader *)malloc(sizeof(STCPHeader));
+	memset(syn_ack_pack, 0, sizeof(STCPHeader));
+	syn_ack_pack->th_seq = htonl(ctx->initial_sequence_num);
+	syn_ack_pack->th_ack = htonl(ack_num);
+	syn_ack_pack->th_off = 5;
+	syn_ack_pack->th_flags = TH_SYN | TH_ACK;
+	syn_ack_pack->th_win = htons(3072); //FIXME: don't know if it's still the same
+	return syn_ack_pack;
 }
 
 /**********************************************************************/

@@ -98,7 +98,7 @@ void transport_init(mysocket_t sd, bool_t is_active)
         // wait for syn
     	unsigned int event_mask = stcp_wait_for_event(sd, NETWORK_DATA, NULL); //FIXME: probably don't want to block forever
     	uint8_t *recv_packet = (uint8_t *)malloc(sizeof(STCPHeader));
-		ssize_t recv_packet_bytes = stcp_netork_recv(sd, recv_packet, sizeof(STCPHeader));
+		ssize_t recv_packet_bytes = stcp_network_recv(sd, recv_packet, sizeof(STCPHeader));
 
     	STCPHeader *syn_packet = (STCPHeader *)recv_packet;
 

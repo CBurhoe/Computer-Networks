@@ -118,7 +118,7 @@ void transport_init(mysocket_t sd, bool_t is_active)
 
         // wait for ack
     	event_mask = stcp_wait_for_event(sd, NETWORK_DATA, NULL); //FIXME: probably don't want to block forever
-    	recv_packet_bytes = stcp_netork_recv(sd, recv_packet, sizeof(STCPHeader));
+    	recv_packet_bytes = stcp_network_recv(sd, recv_packet, sizeof(STCPHeader));
     	STCPHeader *ack_packet = (STCPHeader *)recv_packet;
 
     	if (ack_packet->th_flags != TH_ACK) {

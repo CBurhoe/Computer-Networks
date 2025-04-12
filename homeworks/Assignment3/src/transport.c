@@ -43,7 +43,7 @@ static void generate_initial_seq_num(context_t *ctx);
 static void control_loop(mysocket_t sd, context_t *ctx);
 STCPHeader *make_syn_packet(context_t *ctx);
 STCPHeader *make_ack_packet(tcp_seq seq_num, tcp_seq ack_num);
-STCPHeader *make_syn_ack_packet(context_t *ctx, tcp_seq ack_num);
+STCPHeader *make_syn_ack_packet(context_t *ctx, tcp_seq syn_num);
 
 
 /* initialise the transport layer, and start the main loop, handling
@@ -106,12 +106,12 @@ void transport_init(mysocket_t sd, bool_t is_active)
     		//TODO: Handle missing SYN flag
     	}
 
-    	tcp_seq ack_num = syn_packet->th_ack;
+    	tcp_seq receiver_ack_num = syn_packet->th_ack;
     	tcp_seq receiver_seq_number = syn_packet->th_seq;
 
 
         // send syn ack
-    	STCPHeader *syn_ack_pack = make_syn_ack_packet(ctx, ack_num);
+    	STCPHeader *syn_ack_pack = make_syn_ack_packet(ctx, receiver_seq_num);
     	size_t syn_ack_pack_len = sizeof(STCPHeader);
 
     	ssize_t ack_bytes_sent = stcp_network_send(sd, ack_pack, ack_pack_len, NULL);
@@ -124,7 +124,7 @@ void transport_init(mysocket_t sd, bool_t is_active)
     	if (ack_packet->th_flags != TH_ACK) {
     		//TODO: Handle missing ACK flag
     	}
-    	ack_num = ack_packet->th_ack;
+    	receiver_ack_num = ack_packet->th_ack;
     	receiver_seq_number = ack_packet->th_seq;
 
     }
@@ -202,23 +202,23 @@ STCPHeader  *make_syn_packet(context_t *ctx) {
 	return syn_pack;
 }
 
-STCPHeader *make_ack_packet(tcp_seq seq_num, tcp_seq ack_num) {
+STCPHeader *make_ack_packet(tcp_seq seq_num, tcp_seq ack_num, context_t *ctx) {
 	//TODO: create ack packet using seq and ack numbers from SYN ACK packet
 	STCPHeader *ack_pack = (STCPHeader *)malloc(sizeof(STCPHeader));
 	memset(ack_pack, 0, sizeof(STCPHeader));
-	ack_pack->th_seq = 0; //FIXME: Possibly initial_sequence_num + 1 but don't know
-	ack_pack->th_ack = seq_num; //FIXME: I think ack num = last seq but I may be wrong
+	ack_pack->th_seq = htonl(ctx->initial_sequence_num + 1); //FIXME: Possibly initial_sequence_num + 1 but don't know
+	ack_pack->th_ack = htonl(seq_num + 1); //FIXME: I think ack num = last seq but I may be wrong
 	ack_pack->th_off = 5;
 	ack_pack->th_flags = TH_ACK;
 	ack_pack->th_win = 0; //FIXME: no idea what the new window val is
 	return ack_pack;
 }
 
-STCPHeader *make_syn_ack_packet(context_t *ctx, tcp_seq ack_num) {
+STCPHeader *make_syn_ack_packet(context_t *ctx, tcp_seq syn_num) {
 	STCPHeader *syn_ack_pack = (STCPHeader *)malloc(sizeof(STCPHeader));
 	memset(syn_ack_pack, 0, sizeof(STCPHeader));
 	syn_ack_pack->th_seq = htonl(ctx->initial_sequence_num);
-	syn_ack_pack->th_ack = htonl(ack_num);
+	syn_ack_pack->th_ack = htonl(syn_num + 1);
 	syn_ack_pack->th_off = 5;
 	syn_ack_pack->th_flags = TH_SYN | TH_ACK;
 	syn_ack_pack->th_win = htons(3072); //FIXME: don't know if it's still the same

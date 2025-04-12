@@ -141,6 +141,9 @@ static void generate_initial_seq_num(context_t *ctx)
 	srand(time(0)); //Seed rand using the current time in seconds
 	ctx->initial_sequence_num = rand() / ((RAND_MAX / 256) + 1); // random number from [0,255], source: https://c-faq.com/lib/randrange.html
 #endif
+	ctx->sender_last_sequence_num = ctx->initial_sequence_num;
+	ctx->sender_next_sequence_num = ctx->initial_sequence_num + 1;
+	ctx->receiver_last_sequence_num = 0;
 }
 
 

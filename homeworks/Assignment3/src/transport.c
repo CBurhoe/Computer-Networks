@@ -181,26 +181,34 @@ static void control_loop(mysocket_t sd, context_t *ctx)
         /* check whether it was the network, app, or a close request */
         if (event & APP_DATA)
         {
-            /* the application has requested that data be sent */
-            /* see stcp_app_recv() */
-			uint8_t *app_data = (uint8_t *)malloc(STCP_MSS);
-			size_t app_data_len = stcp_app_recv(sd, app_data, STCP_MSS);
-			//TODO: need to handle app sending more data than STCP_MSS
+            	/* the application has requested that data be sent */
+            	/* see stcp_app_recv() */
+		uint8_t *app_data = (uint8_t *)malloc(STCP_MSS);
+		size_t app_data_len = stcp_app_recv(sd, app_data, STCP_MSS);
+		//TODO: need to handle app sending more data than STCP_MSS
 
-			size_t send_buff_len = sizeof(STCPHeader) + app_data_len;
-			uint8_t *send_buff = (uint8_t *)malloc(send_buff_len);
+		size_t send_buff_len = sizeof(STCPHeader) + app_data_len;
+		uint8_t *send_buff = (uint8_t *)malloc(send_buff_len);
 
-			STCPHeader *send_packet_header = (STCPHeader *)send_buff;
-			construct_data_packet(ctx, send_packet_header, send_buff, send_buff_len, app_data, app_data_len);
-			ssize_t send_bytes = stcp_network_send(sd, send_buff, send_buff_len, NULL);
+		STCPHeader *send_packet_header = (STCPHeader *)send_buff;
+		construct_data_packet(ctx, send_packet_header, send_buff, send_buff_len, app_data, app_data_len);
+		ssize_t send_bytes = stcp_network_send(sd, send_buff, send_buff_len, NULL);
 
-			free(app_data);
+		free(app_data);
         }
 
         if (event & NETWORK_DATA) {
-            /* received data from STCP peer */
-			uint8_t *network_data = (uint8_t *)malloc(STCP_MSS);
-			size_t network_data_len = stcp_network_recv(sd, network_data, STCP_MSS);
+            	/* received data from STCP peer */
+		size_t max_packet_len = STCP_MSS + sizeof(STCPHeader);
+		uint8_t *network_packet = (uint8_t *)malloc(max_packet_len);
+		size_t network_packet_len = stcp_network_recv(sd, network_packet, max_packet_len); //FIXME: May need to handle multiple network segments
+		size_t data_len = network_packet_len - sizeof(STCPHeader);
+		uint8_t *data_for_app = (uint8_t *)malloc(data_len);
+		memcpy(data_for_app, network_packet + sizeof(STCPHeader), data_len);
+
+		stcp_app_send(sd, data_for_app, data_len);
+
+		free(network_packet);
         }
 
         if (event & APP_CLOSE_REQUESTED) {

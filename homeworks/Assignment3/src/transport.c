@@ -185,12 +185,14 @@ static void control_loop(mysocket_t sd, context_t *ctx)
             /* see stcp_app_recv() */
 			uint8_t *app_data = (uint8_t *)malloc(STCP_MSS);
 			size_t app_data_len = stcp_app_recv(sd, app_data, STCP_MSS);
+			//TODO: need to handle app sending more data than STCP_MSS
 
 			size_t send_buff_len = sizeof(STCPHeader) + app_data_len;
 			uint8_t *send_buff = (uint8_t *)malloc(send_buff_len);
 
 			STCPHeader *send_packet_header = (STCPHeader *)send_buff;
 			construct_data_packet(ctx, send_packet_header, send_buff, send_buff_len, app_data, app_data_len);
+			ssize_t send_bytes = stcp_network_send(sd, send_buff, send_buff_len, NULL);
         }
 
         if (event & NETWORK_DATA) {

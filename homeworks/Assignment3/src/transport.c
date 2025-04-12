@@ -37,6 +37,7 @@ typedef struct
 
     /* any other connection-wide global variables go here */
 	tcp_seq sender_last_sequence_num;
+	tcp_seq sender_next_sequence_num;
 	tcp_seq receiver_last_sequence_num;
 } context_t;
 
@@ -46,6 +47,8 @@ static void control_loop(mysocket_t sd, context_t *ctx);
 STCPHeader *make_syn_packet(context_t *ctx);
 STCPHeader *make_ack_packet(tcp_seq seq_num, tcp_seq ack_num, context_t *ctx);
 STCPHeader *make_syn_ack_packet(context_t *ctx, tcp_seq syn_num);
+void construct_data_packet(context_t *ctx, STCPHeader *send_packet_header, void *send_buff, size_t send_buff_len, void *app_data, size_t app_data_len);
+
 
 
 /* initialise the transport layer, and start the main loop, handling
@@ -180,10 +183,20 @@ static void control_loop(mysocket_t sd, context_t *ctx)
         {
             /* the application has requested that data be sent */
             /* see stcp_app_recv() */
+			uint8_t *app_data = (uint8_t *)malloc(STCP_MSS);
+			size_t app_data_len = stcp_app_recv(sd, app_data, STCP_MSS);
+
+			size_t send_buff_len = sizeof(STCPHeader) + app_data_len;
+			uint8_t *send_buff = (uint8_t *)malloc(send_buff_len);
+
+			STCPHeader *send_packet_header = (STCPHeader *)send_buff;
+			construct_data_packet(ctx, send_packet_header, send_buff, send_buff_len, app_data, app_data_len);
         }
 
         if (event & NETWORK_DATA) {
             /* received data from STCP peer */
+			uint8_t *network_data = (uint8_t *)malloc(STCP_MSS);
+			size_t network_data_len = stcp_network_recv(sd, network_data, STCP_MSS);
         }
 
         if (event & APP_CLOSE_REQUESTED) {
@@ -228,6 +241,16 @@ STCPHeader *make_syn_ack_packet(context_t *ctx, tcp_seq syn_num) {
 	syn_ack_pack->th_win = htons(3072); //FIXME: don't know if it's still the same
 	return syn_ack_pack;
 }
+
+void construct_data_packet(context_t *ctx, STCPHeader *send_packet_header, void *send_buff, size_t send_buff_len, void *app_data, size_t app_data_len) {
+	// Set header fields
+	send_packet_header->th_seq = htonl(ctx->sender_next_sequence_num);
+	send_packet_header->th_ack = htonl(ctx->receiver_last_sequence_num + 1); //FIXME: maybe not
+	send_packet_header->th_off = 5;
+	send_packet_header->th_flags = 0;
+	send_packet_header->th_win = 0; //FIXME: need to set window
+}
+
 
 /**********************************************************************/
 /* our_dprintf

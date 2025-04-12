@@ -110,7 +110,7 @@ void transport_init(mysocket_t sd, bool_t is_active)
 
 
         // send syn ack
-    	STCPHeader *syn_ack_pack = make_syn_ack_packet(receiver_seq_number, ack_num);
+    	STCPHeader *syn_ack_pack = make_syn_ack_packet(ctx, ack_num);
     	size_t syn_ack_pack_len = sizeof(STCPHeader);
 
     	ssize_t ack_bytes_sent = stcp_network_send(sd, ack_pack, ack_pack_len, NULL);
@@ -181,7 +181,18 @@ static void control_loop(mysocket_t sd, context_t *ctx)
     }
 }
 
-tcphdr* make_syn_packet(context_t *ctx) {
+STCPHeader *make_syn_ack_packet(context_t *ctx, tcp_seq ack_num) {
+	STCPHeader *syn_ack_pack = (STCPHeader *)malloc(sizeof(STCPHeader));
+	memset(syn_ack_pack, 0, sizeof(STCPHeader));
+	syn_ack_pack->th_seq = htonl(ctx->initial_sequence_num);
+	syn_ack_pack->th_ack = htonl(ack_num);
+	syn_ack_pack->th_off = 5;
+	syn_ack_pack->th_flags = TH_SYN | TH_ACK;
+	syn_ack_pack->th_win = htons(3072); //FIXME: don't know if it's still the same
+	return syn_ack_pack;
+}
+
+STCPHeader  *make_syn_packet(context_t *ctx) {
 	STCPHeader *syn_pack = (STCPHeader *)malloc(sizeof(STCPHeader));
 	memset(syn_pack, 0, sizeof(STCPHeader));
 	syn_pack->th_seq = htonl(ctx->initial_sequence_num);

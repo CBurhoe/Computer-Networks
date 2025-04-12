@@ -36,6 +36,8 @@ typedef struct
     tcp_seq initial_sequence_num;
 
     /* any other connection-wide global variables go here */
+	tcp_seq sender_last_sequence_num;
+	tcp_seq receiver_last_sequence_num;
 } context_t;
 
 

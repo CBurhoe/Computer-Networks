@@ -95,8 +95,25 @@ void transport_init(mysocket_t sd, bool_t is_active)
 
     } else {
         // wait for syn
+    	unsigned int event_mask = stcp_wait_for_event(sd, NETWORK_DATA, NULL); //FIXME: probably don't want to block forever
+    	uint8_t *recv_packet = (uint8_t *)malloc(sizeof(STCPHeader));
+		ssize_t recv_packet_bytes = stcp_netork_recv(sd, recv_packet, sizeof(STCPHeader));
+
+    	STCPHeader *syn_packet = (STCPHeader *)recv_packet;
+
+    	if (syn_packet->th_flags != TH_SYN) {
+    		//TODO: Handle missing SYN flag
+    	}
+
+    	tcp_seq ack_num = syn_packet->th_ack;
+    	tcp_seq receiver_seq_number = syn_packet->th_seq;
+
 
         // send syn ack
+    	STCPHeader *syn_ack_pack = make_syn_ack_packet(receiver_seq_number, ack_num);
+    	size_t syn_ack_pack_len = sizeof(STCPHeader);
+
+    	ssize_t ack_bytes_sent = stcp_network_send(sd, ack_pack, ack_pack_len, NULL);
 
         // wait for ack
 

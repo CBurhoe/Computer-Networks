@@ -48,6 +48,7 @@ STCPHeader *make_syn_packet(context_t *ctx);
 STCPHeader *make_ack_packet(tcp_seq seq_num, tcp_seq ack_num, context_t *ctx);
 STCPHeader *make_syn_ack_packet(context_t *ctx, tcp_seq syn_num);
 void construct_data_packet(context_t *ctx, STCPHeader *send_packet_header, uint8_t *send_buff, size_t send_buff_len, void *app_data, size_t app_data_len);
+STCPHeader *make_fin_packet(context_t *ctx);
 
 
 
@@ -74,66 +75,48 @@ void transport_init(mysocket_t sd, bool_t is_active)
 
     if (is_active) {
         // send syn packet
-		STCPHeader *syn_pack = make_syn_packet(ctx);
-		size_t syn_pack_len = sizeof(STCPHeader);
-		ssize_t bytes_sent = stcp_network_send(sd, syn_pack, syn_pack_len, NULL);
+	STCPHeader *syn_pack = make_syn_packet(ctx);
+	stcp_network_send(sd, syn_pack, sizeof(STCPHeader), NULL);
 
         // wait for syn ack
-		unsigned int event_mask = stcp_wait_for_event(sd, NETWORK_DATA, NULL); //FIXME: probably don't want to block forever
-		uint8_t *recv_packet = (uint8_t *)malloc(sizeof(STCPHeader));
-		ssize_t recv_packet_bytes = stcp_network_recv(sd, recv_packet, sizeof(STCPHeader));
+	stcp_wait_for_event(sd, NETWORK_DATA, NULL); //FIXME: probably don't want to block forever
+	STCPHeader syn_ack_pack;
+	stcp_network_recv(sd, &syn_ack_pack, sizeof(STCPHeader));
 
-		STCPHeader *syn_ack_packet = (STCPHeader *)recv_packet;
-
-		if (syn_ack_packet->th_flags != (TH_SYN | TH_ACK)) {
-			//TODO: Handle missing SYN + ACK flags
-		}
-		if (syn_ack_packet->th_ack != ctx->initial_sequence_num) {
-			//TODO: Handle bad ack number
-		}
-		tcp_seq ack_num = syn_ack_packet->th_ack;
-		tcp_seq receiver_seq_number = syn_ack_packet->th_seq;
-        
+	//if (syn_ack_packet->th_flags != (TH_SYN | TH_ACK)) {
+		//TODO: Handle missing SYN + ACK flags
+	//}
+	//if (syn_ack_packet->th_ack != ctx->initial_sequence_num) {
+		//TODO: Handle bad ack number
+	//}
+	if (syn_ack_pack.th_flags == (TH_SYN | TH_ACK)) {
 		// send ack
-		STCPHeader *ack_pack = make_ack_packet(receiver_seq_number, ack_num, ctx);
-		size_t ack_pack_len = sizeof(STCPHeader);
-		ssize_t ack_bytes_sent = stcp_network_send(sd, ack_pack, ack_pack_len, NULL);
-
+		STCPHeader *ack_pack = make_ack_packet(ntohl(syn_ack_pack.th_seq), ntohl(syn_ack_pack.th_ack), ctx);
+		stcp_network_send(sd, ack_pack, sizeof(STCPHeader), NULL);		
+		ctx->connection_state = CSTATE_ESTABLISHED;
+	}
     } else {
         // wait for syn
-    	unsigned int event_mask = stcp_wait_for_event(sd, NETWORK_DATA, NULL); //FIXME: probably don't want to block forever
-    	uint8_t *recv_packet = (uint8_t *)malloc(sizeof(STCPHeader));
-		ssize_t recv_packet_bytes = stcp_network_recv(sd, recv_packet, sizeof(STCPHeader));
+    	stcp_wait_for_event(sd, NETWORK_DATA, NULL); //FIXME: probably don't want to block forever
+    	STCPHeader syn_pack;
+	stcp_network_recv(sd, &syn_pack, sizeof(STCPHeader));
 
-    	STCPHeader *syn_packet = (STCPHeader *)recv_packet;
+    	if (syn_pack.th_flags == TH_SYN) {
+    		// send syn ack
+ 	   	STCPHeader *syn_ack_pack = make_syn_ack_packet(ctx, ntohl(syn_pack.th_seq));
+	    	stcp_network_send(sd, syn_ack_pack, sizeof(STCPHeader), NULL);
+		free(syn_ack_pack);
+        	// wait for ack
+  	  	stcp_wait_for_event(sd, NETWORK_DATA, NULL); //FIXME: probably don't want to block forever
+		STCPHeader ack_pack;
+    		stcp_network_recv(sd, &ack_pack, sizeof(STCPHeader));
 
-    	if (syn_packet->th_flags != TH_SYN) {
-    		//TODO: Handle missing SYN flag
+    		if (ack_pack.th_flags == TH_ACK) {
+			ctx->connection_state = CSTATE_ESTABLISHED;
+    		}
     	}
-
-    	tcp_seq receiver_ack_num = syn_packet->th_ack;
-    	tcp_seq receiver_seq_num = syn_packet->th_seq;
-
-
-        // send syn ack
-    	STCPHeader *syn_ack_pack = make_syn_ack_packet(ctx, receiver_seq_num);
-    	size_t syn_ack_pack_len = sizeof(STCPHeader);
-
-    	ssize_t syn_ack_bytes_sent = stcp_network_send(sd, syn_ack_pack, syn_ack_pack_len, NULL);
-
-        // wait for ack
-    	event_mask = stcp_wait_for_event(sd, NETWORK_DATA, NULL); //FIXME: probably don't want to block forever
-    	recv_packet_bytes = stcp_network_recv(sd, recv_packet, sizeof(STCPHeader));
-    	STCPHeader *ack_packet = (STCPHeader *)recv_packet;
-
-    	if (ack_packet->th_flags != TH_ACK) {
-    		//TODO: Handle missing ACK flag
-    	}
-    	receiver_ack_num = ack_packet->th_ack;
-    	receiver_seq_num = ack_packet->th_seq;
-
     }
-    ctx->connection_state = CSTATE_ESTABLISHED;
+    //ctx->connection_state = CSTATE_ESTABLISHED;
     stcp_unblock_application(sd);
 
     control_loop(sd, ctx);
@@ -194,6 +177,7 @@ static void control_loop(mysocket_t sd, context_t *ctx)
 		construct_data_packet(ctx, send_packet_header, send_buff, send_buff_len, app_data, app_data_len);
 		ssize_t send_bytes = stcp_network_send(sd, send_buff, send_buff_len, NULL);
 
+		free(send_buff);
 		free(app_data);
         }
 
@@ -209,16 +193,31 @@ static void control_loop(mysocket_t sd, context_t *ctx)
 		stcp_app_send(sd, data_for_app, data_len);
 
 		//TODO: ACK the packet(s)
-
+		free(data_for_app);
 		free(network_packet);
         }
 
         if (event & APP_CLOSE_REQUESTED) {
-		
+		STCPHeader *fin_packet = make_fin_packet(ctx);
+		ssize_t bytes_sent = stcp_network_send(sd, fin_packet, sizeof(STCPHeader), NULL);
+		free(fin_packet);		
+
+		ctx->sender_next_sequence_num += 1;
+
         }
 
         /* etc. */
     }
+}
+
+STCPHeader *make_fin_packet(context_t *ctx) {
+	STCPHeader *fin_pack = (STCPHeader *)calloc(1, sizeof(STCPHeader));
+	fin_pack->th_seq = htonl(ctx->sender_next_sequence_num);
+	fin_pack->th_ack = htonl(ctx->receiver_last_sequence_num + 1);
+	fin_pack->th_off = 5;
+	fin_pack->th_flags = TH_FIN;
+	fin_pack->th_win = htons(3702); //FIXME: figure out actual window size
+	return fin_pack;
 }
 
 STCPHeader  *make_syn_packet(context_t *ctx) {

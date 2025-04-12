@@ -249,6 +249,8 @@ void construct_data_packet(context_t *ctx, STCPHeader *send_packet_header, void 
 	send_packet_header->th_off = 5;
 	send_packet_header->th_flags = 0;
 	send_packet_header->th_win = 0; //FIXME: need to set window
+	// Copy data
+	memcpy(send_buff + 20, app_data, app_data_len);
 }
 
 

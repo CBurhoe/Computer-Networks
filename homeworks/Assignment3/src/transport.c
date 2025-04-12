@@ -114,7 +114,7 @@ void transport_init(mysocket_t sd, bool_t is_active)
     	STCPHeader *syn_ack_pack = make_syn_ack_packet(ctx, receiver_seq_num);
     	size_t syn_ack_pack_len = sizeof(STCPHeader);
 
-    	ssize_t ack_bytes_sent = stcp_network_send(sd, ack_pack, ack_pack_len, NULL);
+    	ssize_t syn_ack_bytes_sent = stcp_network_send(sd, syn_ack_pack, syn_ack_pack_len, NULL);
 
         // wait for ack
     	event_mask = stcp_wait_for_event(sd, NETWORK_DATA, NULL); //FIXME: probably don't want to block forever

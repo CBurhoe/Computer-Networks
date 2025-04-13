@@ -41,13 +41,6 @@ typedef struct
     tcp_seq initial_sequence_num;
 
     /* any other connection-wide global variables go here */
-	tcp_seq sender_last_sequence_num;
-	tcp_seq sender_next_sequence_num;
-	tcp_seq receiver_last_sequence_num;
-	tcp_seq receiver_last_ack;
-	uint16_t receiver_win;
-	tcp_seq last_delivered_seq;
-	uint16_t recv_buf_size;
 
 	tcp_seq send_una;
 	tcp_seq send_nxt;
@@ -60,12 +53,6 @@ typedef struct
 static void generate_initial_seq_num(context_t *ctx);
 static void control_loop(mysocket_t sd, context_t *ctx);
 void send_control_packet(mysocket_t sd, context_t *ctx, tcp_seq seq, tcp_seq ack, uint8_t flags);
-/*
-STCPHeader *make_syn_packet(context_t *ctx);
-STCPHeader *make_ack_packet(tcp_seq seq_num, tcp_seq ack_num, context_t *ctx);
-STCPHeader *make_syn_ack_packet(context_t *ctx, tcp_seq syn_num);
-STCPHeader *make_fin_packet(context_t *ctx);
-*/
 void send_data_packet(mysocket_t sd, context_t *ctx, void *app_data, size_t app_data_len);
 STCPHeader *make_packet(tcp_seq seq, tcp_seq ack, uint8_t flags, uint16_t win);
 
@@ -168,16 +155,8 @@ static void generate_initial_seq_num(context_t *ctx)
 #else
     /* you have to fill this up */
 	srand(time(0)); //Seed rand using the current time in seconds
-	ctx->initial_sequence_num = rand() / ((RAND_MAX / 256) + 1); // random number from [0,255], source: https://c-faq.com/lib/randrange.html
+	ctx->initial_sequence_num = rand() / ((RAND_MAX / 256) + 1); // random number from [0,255], https://c-faq.com/lib/randrange.html
 #endif
-	ctx->sender_last_sequence_num = ctx->initial_sequence_num;
-	ctx->sender_next_sequence_num = ctx->initial_sequence_num + 1;
-	ctx->receiver_last_ack = ctx->initial_sequence_num;
-	ctx->receiver_win = MAX_WINDOW_SIZE;
-	ctx->receiver_last_sequence_num = ctx->initial_sequence_num;
-	ctx->last_delivered_seq = ctx->initial_sequence_num;
-	ctx->recv_buf_size = MAX_WINDOW_SIZE;
-
 	ctx->send_una = ctx->initial_sequence_num;
 	ctx->send_nxt = ctx->initial_sequence_num;
 	ctx->send_win = MAX_WINDOW_SIZE;
@@ -208,87 +187,67 @@ static void control_loop(mysocket_t sd, context_t *ctx)
         if (event & APP_DATA) {
        	    	/* the application has requested that data be sent */
             	/* see stcp_app_recv() */
-		char *app_data = (char *)calloc(1, STCP_MSS);
-		size_t app_data_len = stcp_app_recv(sd, app_data, STCP_MSS);
-		//TODO: need to handle app sending more data than STCP_MSS
-		if (app_data_len > 0) {
-			send_data_packet(sd, ctx, app_data, app_data_len);
-			ctx->send_una = ctx->send_nxt;
-			ctx->send_nxt += app_data_len;
-			/*size_t in_flight = ctx->sender_next_sequence_num - ctx->receiver_last_ack;
-			size_t space_left = 0;
-			if (ctx->receiver_win > in_flight) {
-				space_left = ctx->receiver_win - in_flight;
-			}
-			if (space_left > app_data_len) {
-				space_left = app_data_len;
-			}
-			if (space_left > 0) {
-				send_data_packet(sd, ctx, app_data, app_data_len);
-				ctx->sender_last_sequence_num = ctx->sender_next_sequence_num;
-				ctx->sender_next_sequence_num += space_left;
-			}*/
+		uint32_t empty_space = ctx->rcv_win - (ctx->send_nxt - ctx->send_una);
+		size_t to_read = 0;
+		if (empty_space < STCP_MSS) {
+			to_read = empty_space;
+		} else {
+			to_read = STCP_MSS;
 		}
-		free(app_data);
+
+		if (to_read) {
+			char *app_data = (char *)calloc(1, to_read);
+			size_t app_data_len = stcp_app_recv(sd, app_data, to_read);
+
+			if (app_data_len > 0) {
+				send_data_packet(sd, ctx, app_data, app_data_len);
+				ctx->send_nxt += app_data_len;
+			}
+			free(app_data);
+			
+		}
        	}
 
        	if (event & NETWORK_DATA) {
             	/* received data from STCP peer */
 		size_t max_packet_len = STCP_MSS + sizeof(STCPHeader);
 		char *network_packet = (char *)calloc(1, max_packet_len);
-		ssize_t network_packet_len = stcp_network_recv(sd, network_packet, max_packet_len); //FIXME: May need to handle multiple network segments
+		ssize_t network_packet_len = stcp_network_recv(sd, network_packet, max_packet_len); 
 		dprintf(network_packet);
-		//stcp_app_send(sd, data_for_app, data_len);
 
 		STCPHeader *network_packet_header = (STCPHeader *)network_packet;
+		tcp_seq peer_seq = ntohl(network_packet_header->th_seq);
+		tcp_seq peer_ack = ntohl(network_packet_header->th_ack);
+		uint8_t flags = network_packet_header->th_flags;
+		ctx->rcv_win = ntohs(network_packet_header->th_win);
+		
 		char *data_for_app = network_packet + sizeof(STCPHeader);
 		size_t data_len = network_packet_len - sizeof(STCPHeader);
 
-		tcp_seq peer_seq = ntohl(network_packet_header->th_seq);
-		tcp_seq peer_ack = ntohl(network_packet_header->th_ack);
-		//ctx->receiver_last_ack = ntohl(network_packet_header->th_ack);
-		ctx->rcv_win = ntohs(network_packet_header->th_win);
-		if (data_len > 0) {
-			ctx->rcv_nxt = peer_seq + data_len;
-		} else {
-			ctx->rcv_nxt = peer_seq + 1;
-		}
-		if (ctx->connection_state == CSTATE_FIN_WAIT_1) {
-			//if ((network_packet_header->th_flags & (TH_ACK | TH_FIN)) && ctx->receiver_last_ack == ctx->sender_next_sequence_num) {
-			//	send_control_packet(sd, ctx, ctx->sender_next_sequence_num, peer_seq + 1, TH_ACK);
-			//	ctx->connection_state = CSTATE_TIME_WAIT;
-			//	continue;
-			//}
-			if ((network_packet_header->th_flags & TH_ACK) && !(network_packet_header->th_flags & TH_FIN) && peer_ack == ctx->send_una) {
+		if (flags & TH_ACK) {
+			if (peer_ack > ctx->send_una && peer_ack <= ctx->send_nxt) {
+				ctx->send_una = peer_ack;
+			}
+			if (ctx->connection_state == CSTATE_FIN_WAIT_1) {
 				ctx->connection_state = CSTATE_FIN_WAIT_2;
-				continue;
 			}
-			if ((network_packet_header->th_flags & TH_ACK) && (network_packet_header->th_flags & TH_FIN) && peer_ack == ctx->send_una) {
-				send_control_packet(sd, ctx, ctx->send_nxt, ctx->rcv_nxt, TH_ACK);
-				ctx->connection_state = CSTATE_TIME_WAIT;
-				continue;
-			}
+		}
 
-		}
-		if (ctx->connection_state == CSTATE_FIN_WAIT_2) {
-			if (network_packet_header->th_flags & TH_FIN) {
-				send_control_packet(sd, ctx, ctx->send_nxt, ctx->rcv_nxt, TH_ACK);
-				ctx->connection_state = CSTATE_TIME_WAIT;
-			}
-			continue;
-		}
-		if (network_packet_header->th_flags & TH_FIN) {
+		if (flags & TH_FIN) {
 			send_control_packet(sd, ctx, ctx->send_nxt, ctx->rcv_nxt, TH_ACK);
 			if (ctx->connection_state == CSTATE_ESTABLISHED) {
 				ctx->connection_state = CSTATE_CLOSE_WAIT;
+			} else if (ctx->connection_state == CSTATE_FIN_WAIT_2) {
+				ctx->connection_state = CSTATE_TIME_WAIT;
 			} else if (ctx->connection_state == CSTATE_LAST_ACK) {
 				ctx->done = TRUE;
 			}
 		}
-		if (ctx->connection_state == CSTATE_LAST_ACK) {
-			if ((network_packet_header->th_flags & TH_ACK) && peer_ack == ctx->send_una) {
-				ctx->done = TRUE;
-			}
+
+		if (data_len > 0) {
+			ctx->rcv_nxt += data_len;
+		} else {
+			ctx->rcv_nxt += 1;
 		}
 
 		if (data_len > 0) {
@@ -301,19 +260,20 @@ static void control_loop(mysocket_t sd, context_t *ctx)
 
         if (event & APP_CLOSE_REQUESTED) {
 		if (ctx->connection_state == CSTATE_ESTABLISHED) {
-			send_control_packet(sd, ctx, ctx->send_nxt, ctx->rcv_nxt, TH_FIN); //FIXME
+			send_control_packet(sd, ctx, ctx->send_nxt, ctx->rcv_nxt, TH_FIN); 
 			ctx->connection_state = CSTATE_FIN_WAIT_1;
 			ctx->send_nxt += 1;
 		} else if (ctx->connection_state == CSTATE_CLOSE_WAIT) {
-			send_control_packet(sd, ctx, ctx->send_nxt, ctx->rcv_nxt, TH_FIN); //FIXME
+			send_control_packet(sd, ctx, ctx->send_nxt, ctx->rcv_nxt, TH_FIN);
 			ctx->connection_state = CSTATE_LAST_ACK;
 			ctx->send_nxt += 1;
 		}
 	}
 
 	if (ctx->connection_state == CSTATE_TIME_WAIT) {
-		//sleep(1); FIXME: wait for 2*MSL
+		sleep(1);
 		ctx->done = TRUE;
+		break;
 	}
     }
 }
@@ -333,68 +293,22 @@ void send_control_packet(mysocket_t sd, context_t *ctx, tcp_seq seq, tcp_seq ack
 	pack->th_ack = htonl(ack);
 	pack->th_off = 5;
 	pack->th_flags = flags;
-	pack->th_win = htons(ctx->recv_buf_size - (ctx->receiver_last_sequence_num - ctx->last_delivered_seq));
+	pack->th_win = htons(ctx->send_una + ctx->send_win - ctx->send_nxt);
 	dprintf((char *)pack);
 	stcp_network_send(sd, pack, sizeof(STCPHeader), NULL);
 	free(pack);
 }
-/*STCPHeader *make_fin_packet(context_t *ctx) {
-	STCPHeader *fin_pack = (STCPHeader *)calloc(1, sizeof(STCPHeader));
-	fin_pack->th_seq = htonl(ctx->sender_next_sequence_num);
-	fin_pack->th_ack = htonl(ctx->receiver_last_sequence_num + 1);
-	fin_pack->th_off = 5;
-	fin_pack->th_flags = TH_FIN;
-	fin_pack->th_win = htons(3702); //FIXME: figure out actual window size
-	return fin_pack;
-}
-
-STCPHeader  *make_syn_packet(context_t *ctx) {
-	STCPHeader *syn_pack = (STCPHeader *)malloc(sizeof(STCPHeader));
-	memset(syn_pack, 0, sizeof(STCPHeader));
-	syn_pack->th_seq = htonl(ctx->initial_sequence_num);
-	syn_pack->th_ack = 0;
-	syn_pack->th_off = 5;
-	syn_pack->th_flags = TH_SYN;
-	syn_pack->th_win = htons(3072);
-	ctx->sender_last_sequence_num = ctx->initial_sequence_num;
-	return syn_pack;
-}
-
-STCPHeader *make_ack_packet(tcp_seq seq_num, tcp_seq ack_num, context_t *ctx) {
-	//TODO: create ack packet using seq and ack numbers from SYN ACK packet
-	STCPHeader *ack_pack = (STCPHeader *)malloc(sizeof(STCPHeader));
-	memset(ack_pack, 0, sizeof(STCPHeader));
-	ack_pack->th_seq = htonl(ctx->sender_last_sequence_num + 1); //FIXME: Possibly initial_sequence_num + 1 but don't know
-	ack_pack->th_ack = htonl(seq_num + 1); //FIXME: I think ack num = last seq but I may be wrong
-	ack_pack->th_off = 5;
-	ack_pack->th_flags = TH_ACK;
-	ack_pack->th_win = 0; //FIXME: no idea what the new window val is
-	return ack_pack;
-}
-
-STCPHeader *make_syn_ack_packet(context_t *ctx, tcp_seq syn_num) {
-	STCPHeader *syn_ack_pack = (STCPHeader *)malloc(sizeof(STCPHeader));
-	memset(syn_ack_pack, 0, sizeof(STCPHeader));
-	syn_ack_pack->th_seq = htonl(ctx->initial_sequence_num);
-	syn_ack_pack->th_ack = htonl(syn_num + 1);
-	syn_ack_pack->th_off = 5;
-	syn_ack_pack->th_flags = TH_SYN | TH_ACK;
-	syn_ack_pack->th_win = htons(3072); //FIXME: don't know if it's still the same
-	return syn_ack_pack;
-}*/
 
 void send_data_packet(mysocket_t sd, context_t *ctx, void *app_data, size_t app_data_len) {
 	size_t packet_len = app_data_len + sizeof(STCPHeader);
 	char *packet = (char *)calloc(1, packet_len);
 
 	STCPHeader *send_packet_header = (STCPHeader *)packet;
-	// Set header fields
 	send_packet_header->th_seq = htonl(ctx->send_nxt);
 	send_packet_header->th_ack = htonl(ctx->rcv_nxt);
 	send_packet_header->th_off = 5;
 	send_packet_header->th_flags = 0;
-	send_packet_header->th_win = htons(ctx->send_win);
-	// Copy data
+	send_packet_header->th_win = htons(ctx->send_una + ctx->send_win - ctx->send_nxt);
 	memcpy(packet + sizeof(STCPHeader), app_data, app_data_len);
 	dprintf(packet);
 	stcp_network_send(sd, packet, packet_len, NULL);

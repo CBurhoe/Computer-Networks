@@ -161,7 +161,7 @@ static void generate_initial_seq_num(context_t *ctx)
 	ctx->send_nxt = ctx->initial_sequence_num;
 	ctx->send_win = MAX_WINDOW_SIZE;
 	ctx->rcv_nxt = 1;
-	ctx->rcv_nxt = MAX_WINDOW_SIZE;
+	ctx->rcv_win = MAX_WINDOW_SIZE;
 }
 
 
@@ -188,11 +188,9 @@ static void control_loop(mysocket_t sd, context_t *ctx)
        	    	/* the application has requested that data be sent */
             	/* see stcp_app_recv() */
 		uint32_t empty_space = ctx->rcv_win - (ctx->send_nxt - ctx->send_una);
-		size_t to_read = 0;
-		if (empty_space < STCP_MSS) {
+		size_t to_read = STCP_MSS;
+		if (empty_space < to_read) {
 			to_read = empty_space;
-		} else {
-			to_read = STCP_MSS;
 		}
 
 		if (to_read) {
@@ -219,7 +217,7 @@ static void control_loop(mysocket_t sd, context_t *ctx)
 		tcp_seq peer_seq = ntohl(network_packet_header->th_seq);
 		tcp_seq peer_ack = ntohl(network_packet_header->th_ack);
 		uint8_t flags = network_packet_header->th_flags;
-		ctx->rcv_win = ntohs(network_packet_header->th_win);
+		uint16_t peer_win = ntohs(network_packet_header->th_win);
 		
 		char *data_for_app = network_packet + sizeof(STCPHeader);
 		size_t data_len = network_packet_len - sizeof(STCPHeader);
@@ -246,14 +244,18 @@ static void control_loop(mysocket_t sd, context_t *ctx)
 
 		if (data_len > 0) {
 			ctx->rcv_nxt += data_len;
+			if (ctx->rcv_win >= data_len) {
+				ctx->rcv_win -= data_len;
+			} else {
+				ctx->rcv_win = 0;
+			}
+			stcp_app_send(sd, data_for_app, data_len);
+			ctx->rcv_win = MAX_WINDOW_SIZE;
+			send_control_packet(sd, ctx, ctx->send_nxt, ctx->rcv_nxt, TH_ACK);
 		} else {
 			ctx->rcv_nxt += 1;
 		}
 
-		if (data_len > 0) {
-			stcp_app_send(sd, data_for_app, data_len);
-			send_control_packet(sd, ctx, ctx->send_nxt, ctx->rcv_nxt, TH_ACK);
-		}
 		
 		free(network_packet);
         }

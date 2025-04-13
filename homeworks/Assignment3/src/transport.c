@@ -158,7 +158,7 @@ static void generate_initial_seq_num(context_t *ctx)
 	ctx->sender_next_sequence_num = ctx->initial_sequence_num + 1;
 	ctx->receiver_last_ack = ctx->initial_sequence_num;
 	ctx->receiver_win = MAX_WINDOW_SIZE;
-	ctx->receiver_last_sequence_num = 0;
+	ctx->receiver_last_sequence_num = ctx->initial_sequence_num;
 	ctx->last_delivered_seq = ctx->initial_sequence_num;
 	ctx->recv_buf_size = MAX_WINDOW_SIZE;
 }
@@ -226,13 +226,18 @@ static void control_loop(mysocket_t sd, context_t *ctx)
 		ctx->receiver_last_ack = ntohl(network_packet_header->th_ack);
 		ctx->receiver_win = ntohs(network_packet_header->th_win);
 		if (ctx->connection_state == CSTATE_FIN_WAIT_1) {
-			if ((network_packet_header->th_flags & (TH_ACK | TH_FIN)) && ctx->receiver_last_ack == ctx->sender_next_sequence_num) {
-				send_control_packet(sd, ctx, ctx->sender_next_sequence_num, peer_seq + 1, TH_ACK);
-				ctx->connection_state = CSTATE_TIME_WAIT;
+			//if ((network_packet_header->th_flags & (TH_ACK | TH_FIN)) && ctx->receiver_last_ack == ctx->sender_next_sequence_num) {
+			//	send_control_packet(sd, ctx, ctx->sender_next_sequence_num, peer_seq + 1, TH_ACK);
+			//	ctx->connection_state = CSTATE_TIME_WAIT;
+			//	continue;
+			//}
+			if ((network_packet_header->th_flags & TH_ACK) && !(network_packet_header->th_flags & TH_FIN) && ctx->receiver_last_ack == ctx->sender_next_sequence_num) {
+				ctx->connection_state = CSTATE_FIN_WAIT_2;
 				continue;
 			}
-			if ((network_packet_header->th_flags & TH_ACK) && ctx->receiver_last_ack == ctx->sender_next_sequence_num) {
-				ctx->connection_state = CSTATE_FIN_WAIT_2;
+			if ((network_packet_header->th_flags & TH_ACK) && (network_packet_header->th_flags & TH_FIN) && ctx->receiver_last_ack == ctx->sender_next_sequence_num) {
+				send_control_packet(sd, ctx, ctx->sender_next_sequence_num, peer_seq + 1, TH_ACK);
+				ctx->connection_state = CSTATE_TIME_WAIT;
 				continue;
 			}
 

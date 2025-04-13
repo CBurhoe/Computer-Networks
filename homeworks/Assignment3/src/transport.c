@@ -288,6 +288,7 @@ void send_control_packet(mysocket_t sd, context_t *ctx, tcp_seq seq, tcp_seq ack
 	pack->th_off = 5;
 	pack->th_flags = flags;
 	pack->th_win = htons(ctx->recv_buf_size - (ctx->receiver_last_sequence_num - ctx->last_delivered_seq));
+	dprintf((char *)pack);
 	stcp_network_send(sd, pack, sizeof(STCPHeader), NULL);
 	free(pack);
 }
@@ -349,6 +350,7 @@ void send_data_packet(mysocket_t sd, context_t *ctx, void *app_data, size_t app_
 	send_packet_header->th_win = htons(ctx->recv_buf_size - (ctx->receiver_last_sequence_num - ctx->last_delivered_seq)); //FIXME: need to set window
 	// Copy data
 	memcpy(packet + sizeof(STCPHeader), app_data, app_data_len);
+	dprintf(packet);
 	stcp_network_send(sd, packet, packet_len, NULL);
 	free(packet);
 }

@@ -48,6 +48,12 @@ typedef struct
 	uint16_t receiver_win;
 	tcp_seq last_delivered_seq;
 	uint16_t recv_buf_size;
+
+	tcp_seq send_una;
+	tcp_seq send_nxt;
+	uint16_t send_win;
+	tcp_seq rcv_nxt;
+	uint16_t rcv_win;
 } context_t;
 
 
@@ -161,6 +167,12 @@ static void generate_initial_seq_num(context_t *ctx)
 	ctx->receiver_last_sequence_num = ctx->initial_sequence_num;
 	ctx->last_delivered_seq = ctx->initial_sequence_num;
 	ctx->recv_buf_size = MAX_WINDOW_SIZE;
+
+	ctx->send_una = ctx->initial_sequence_num;
+	ctx->send_nxt = ctx->initial_sequence_num;
+	ctx->send_win = MAX_WINDOW_SIZE;
+	ctx->rcv_nxt = 1;
+	ctx->rcv_nxt = MAX_WINDOW_SIZE;
 }
 
 
@@ -186,7 +198,7 @@ static void control_loop(mysocket_t sd, context_t *ctx)
         if (event & APP_DATA) {
        	    	/* the application has requested that data be sent */
             	/* see stcp_app_recv() */
-		uint8_t *app_data = (uint8_t *)malloc(STCP_MSS);
+		char *app_data = (char *)calloc(1, STCP_MSS);
 		size_t app_data_len = stcp_app_recv(sd, app_data, STCP_MSS);
 		//TODO: need to handle app sending more data than STCP_MSS
 		if (app_data_len > 0) {

@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <arpa/inet.h>
+#include <unistd.h>
 #include "mysock.h"
 #include "stcp_api.h"
 #include "transport.h"
@@ -214,6 +215,7 @@ static void control_loop(mysocket_t sd, context_t *ctx)
 		size_t max_packet_len = STCP_MSS + sizeof(STCPHeader);
 		char *network_packet = (char *)malloc(max_packet_len);
 		size_t network_packet_len = stcp_network_recv(sd, network_packet, max_packet_len); //FIXME: May need to handle multiple network segments
+		dprintf(netork_packet);
 		//stcp_app_send(sd, data_for_app, data_len);
 
 		STCPHeader *network_packet_header = (STCPHeader *)network_packet;
@@ -223,7 +225,22 @@ static void control_loop(mysocket_t sd, context_t *ctx)
 		tcp_seq peer_seq = ntohl(network_packet_header->th_seq);
 		ctx->receiver_last_ack = ntohl(network_packet_header->th_ack);
 		ctx->receiver_win = ntohs(network_packet_header->th_win);
+		if (ctx->connection_state == CSTATE_FIN_WAIT_1) {
+			if ((network_packet_header->th_flags & TH_ACK) && ctx->receiver_last_ack == ctx->sender_next_sequence_num) {
+				ctx->connection_state = CSTATE_FIN_WAIT_2;
+			}
+			continue;
 
+		} 
+		if (ctx->connection_state == CSTATE_FIN_WAIT_2) {
+			if (network_packet_header->th_flags & TH_FIN) {
+				ctx->receiver_last_sequence_num = peer_seq;
+				send_control_packet(sd, ctx, ctx->sender_next_sequence_num, ctx->receiver_last_sequence_num + 1, TH_ACK);
+				ctx->connection_state = CSTATE_TIME_WAIT;
+			}
+			sleep(1);
+			continue;
+		}
 		if ((network_packet_header->th_flags & (TH_FIN | TH_ACK)) == (TH_FIN | TH_ACK) && ctx->connection_state == CSTATE_FIN_WAIT_1) {
 			send_control_packet(sd, ctx, ctx->sender_next_sequence_num, peer_seq + 1, TH_ACK);
 			ctx->connection_state = CSTATE_TIME_WAIT;
@@ -255,13 +272,13 @@ static void control_loop(mysocket_t sd, context_t *ctx)
 
         if (event & APP_CLOSE_REQUESTED) {
 		if (ctx->connection_state == CSTATE_ESTABLISHED) {
-			send_control_packet(sd, ctx, ctx->sender_next_sequence_num, ctx->receiver_last_sequence_num, TH_FIN); //FIXME
+			send_control_packet(sd, ctx, ctx->sender_next_sequence_num, ctx->receiver_last_sequence_num + 1, TH_FIN); //FIXME
 			ctx->connection_state = CSTATE_FIN_WAIT_1;
-			ctx->sender_next_sequence_num++;
+			ctx->sender_next_sequence_num += 1;
 		} else if (ctx->connection_state == CSTATE_CLOSE_WAIT) {
-			send_control_packet(sd, ctx, ctx->sender_next_sequence_num, ctx->receiver_last_sequence_num, TH_FIN); //FIXME
+			send_control_packet(sd, ctx, ctx->sender_next_sequence_num, ctx->receiver_last_sequence_num + 1, TH_FIN); //FIXME
 			ctx->connection_state = CSTATE_LAST_ACK;
-			ctx->sender_next_sequence_num++;
+			ctx->sender_next_sequence_num += 1;
 		}
 	}
 

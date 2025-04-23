@@ -13,3 +13,4 @@ pytz==2025.2
 seaborn==0.13.0
 six==1.17.0
 tzdata==2025.2
+pyarrow==19.0

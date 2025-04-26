@@ -91,7 +91,9 @@ def question_two_two():
     df = pd.read_csv(r'./bgp_route.csv')
 
 def question_two_analysis():
-    # question_one_analysis()
+    # question_two_one()
+    question_two_analysis()
+
 
 
 

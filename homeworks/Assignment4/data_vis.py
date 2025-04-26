@@ -89,10 +89,16 @@ def question_two_one():
 
 def question_two_two():
     df = pd.read_csv(r'./bgp_route.csv')
+    path_lengths = pd.DataFrame(columns=['Length','Count'])
+    for path in df['ASPATH']:
+        length = len(set(path.split()))
+        path_lengths[path_lengths['Length'] == length] += 1
+    sns.ecdfplot(data=path_lengths, x='Length')
+    plt.show()
 
 def question_two_analysis():
     # question_two_one()
-    question_two_analysis()
+    question_two_two()
 
 
 

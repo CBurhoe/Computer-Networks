@@ -89,16 +89,30 @@ def question_two_one():
 
 def question_two_two():
     df = pd.read_csv(r'./bgp_route.csv')
-    path_lengths = pd.DataFrame(columns=['Length','Count'])
-    for path in df['ASPATH']:
-        length = len(set(path.split()))
-        path_lengths[path_lengths['Length'] == length] += 1
-    sns.ecdfplot(data=path_lengths, x='Length')
+    df['Path Length'] = df['ASPATH'].str.split().str.len()
+    sns.ecdfplot(data=df, x='Path Length')
     plt.show()
+
+def question_two_three():
+    df = pd.read_csv(r'./bgp_update.csv')
+    df['Closest Second'] = df['TIME'].apply(lambda x: x.split('.', 1)[0])
+    df['Closest Minute'] = df['TIME'].apply(lambda x: x.split(':', 1)[0])
+    print(df.head(10))
+
+    updates_per_second = df['Closest Second'].value_counts()
+    updates_per_minute = df['Closest Minute'].value_counts()
+    sns.histplot(data=df, x='Closest Second')
+    plt.show()
+    # sns.histplot(data=df, x='Closest Minute')
+    # plt.show()
+
+    print("Average updates per minute is: ", updates_per_minute.mean())
+
 
 def question_two_analysis():
     # question_two_one()
-    question_two_two()
+    # question_two_two()
+    question_two_three()
 
 
 

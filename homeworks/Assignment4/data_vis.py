@@ -9,10 +9,11 @@ def main():
 
     print(df_all_flows)
 
+    # BEGIN: Q1.1
     sns.ecdfplot(data=df_all_flows, x='Bytes', log_scale=True)
     plt.show()
 
-    df_ip_flows = df_all_flows[df_all_flows['Protocol'] == 'IP']
+    df_ip_flows = df_all_flows[df_all_flows['Protocol'] == 'TCP']
     sns.ecdfplot(data=df_ip_flows, x='Bytes', log_scale=True)
     plt.show()
 
@@ -20,8 +21,10 @@ def main():
     sns.ecdfplot(data=df_udp_flows, x='Bytes', log_scale=True)
     plt.show()
 
-    # for index, row in df_all_flows_cdf.iterrows():
-    #     df_tmp = pd.DataFrame(dict(Counter(df_all_flows_cdf['bytes'])), index = [0]).T
+
+    # BEGIN: Q1.2
+    # df_truncated_ip_addr = df_all_flows[df_all_flows['Protocol'] == 'IP']
+
 
 
 

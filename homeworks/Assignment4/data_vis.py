@@ -3,6 +3,11 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 def main():
+    # question_one_analysis()
+    question_two_analysis()
+
+
+def question_one_analysis():
     df = pd.read_csv(r'./netflow.csv')
     print(df)
     df_all_flows = df.__deepcopy__()
@@ -67,7 +72,28 @@ def main():
 
     # Q1.5 written
 
+def question_two_one():
     # Begin Q2.1
+    df = pd.read_csv(r'./bgp_route.csv')
+
+    all_ases = df['ASPATH'].str.split().explode()
+    as_paths = all_ases.value_counts().reset_index()
+
+    as_paths.columns = ['AS', 'Count']
+    print(as_paths.head(10), '\n')
+    total_paths = df.shape[0]
+
+    # top_ten = df[df['ASPATH'] as_paths['Count'].head(10).sum()]
+    top_ten = df['ASPATH'].apply(lambda x: any(as_name in x.split() for as_name in as_paths.head(10)['AS'])).sum() # Very inefficient, maybe fix later
+    print("The top ten most frequently occurring ASes are on ", top_ten, '/', total_paths, " = ", top_ten/total_paths, " paths.", '\n')
+
+def question_two_two():
+    df = pd.read_csv(r'./bgp_route.csv')
+
+def question_two_analysis():
+    # question_one_analysis()
+
+
 
 
 

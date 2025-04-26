@@ -65,6 +65,10 @@ def main():
     num_within_block = df_truncated_ip_addr[(df_truncated_ip_addr['Truncated Src IP addr'] == '128.112') & (df_truncated_ip_addr['Truncated Dst IP addr'] == '128.112')]['Bytes'].sum()
     print("Percentage of bytes with source and destination address within 128.112.0.0/16 block: ", num_within_block, " / ", total_bytes, " = ", num_within_block/total_bytes, '\n')
 
+    # Q1.5 written
+
+    # Begin Q2.1
+
 
 
 if __name__ == '__main__':

@@ -3,28 +3,28 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 def main():
-    # question_one_analysis()
+    question_one_analysis()
     question_two_analysis()
 
 
 def question_one_analysis():
     df = pd.read_csv(r'./netflow.csv')
-    print(df)
+    # print(df)
     df_all_flows = df.__deepcopy__()
 
     # print(df_all_flows)
 
     # BEGIN: Q1.1
     sns.ecdfplot(data=df_all_flows, x='Bytes', log_scale=True)
-    # plt.show() Uncomment for graphs
+    plt.show()
 
     df_ip_flows = df_all_flows[df_all_flows['Protocol'] == 'TCP']
     sns.ecdfplot(data=df_ip_flows, x='Bytes', log_scale=True)
-    # plt.show() Uncomment for graphs
+    plt.show()
 
     df_udp_flows = df_all_flows[df_all_flows['Protocol'] == 'UDP']
     sns.ecdfplot(data=df_udp_flows, x='Bytes', log_scale=True)
-    # plt.show() Uncomment for graphs
+    plt.show()
 
 
     # BEGIN: Q1.2
@@ -128,9 +128,9 @@ def question_two_four():
 
 
 def question_two_analysis():
-    # question_two_one()
-    # question_two_two()
-    # question_two_three()
+    question_two_one()
+    question_two_two()
+    question_two_three()
     question_two_four()
 
 

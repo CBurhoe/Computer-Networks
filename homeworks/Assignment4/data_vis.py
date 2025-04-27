@@ -113,26 +113,24 @@ def question_two_four():
     df2 = pd.read_csv(r'./bgp_route.csv')
     total_paths = df2.shape[0] + df1.shape[0]
 
-    unique_as_per_path_1 = df1['ASPATH'].apply(lambda path: set(path.split()))
-    unique_as_per_path_2 = df2['ASPATH'].apply(lambda path: set(path.split()))
-    all_as_per_path = pd.concat([unique_as_per_path_1, unique_as_per_path_2], ignore_index=True)
-    unique_as_per_path = all_as_per_path.drop_duplicates(subset=['ASPATH'])
+    from_df1 = df1['FROM'].apply(lambda x: x.split(' ', 1)[1])
+    print(from_df1)
+    from_df2 = df2['FROM'].apply(lambda x: x.split(' ', 1)[1])
+    print(from_df2)
 
-    all_unique_as = set()
-    for as_set in unique_as_per_path:
-        all_unique_as.update(as_set)
+    all_ases = pd.concat([from_df1, from_df2])
+    as_counts = all_ases.value_counts().reset_index()
+    as_counts.columns = ['AS', 'Count']
 
-    as_counts = {}
-    for as_name in all_unique_as:
-        count = sum(1 for as_set in unique_as_per_path if as_name in as_set)
-        as_counts[as_name] = count
+    print(as_counts)
 
-    as_percentages = pd.DataFrame({'AS': list(as_counts.keys()), 'Count': list(as_counts.values()), 'Percentage': [count / total_paths * 100 for count in as_counts.values()]})
+    as_counts['Percentage'] = [count / total_paths * 100 for count in as_counts['Count']]
+    print(as_counts)
+    print("AS1403 Made ", as_counts[as_counts['AS'] == 'AS1403']['Count'], " updates.\n")
 
-    sns.ecdfplot(data=as_percentages, x='Percentage')
+    sns.ecdfplot(data=as_counts, x='Percentage', log_scale=True)
     plt.show()
-    # as_paths = pd.DataFrame(columns=['AS', 'Paths'])
-    # as_paths = set(df1['ASPATH'].str.split())
+
 
 
 

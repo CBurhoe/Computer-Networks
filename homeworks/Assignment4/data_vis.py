@@ -83,7 +83,6 @@ def question_two_one():
     print(as_paths.head(10), '\n')
     total_paths = df.shape[0]
 
-    # top_ten = df[df['ASPATH'] as_paths['Count'].head(10).sum()]
     top_ten = df['ASPATH'].apply(lambda x: any(as_name in x.split() for as_name in as_paths.head(10)['AS'])).sum() # Very inefficient, maybe fix later
     print("The top ten most frequently occurring ASes are on ", top_ten, '/', total_paths, " = ", '{:.1%}'.format(top_ten/total_paths), " paths.", '\n')
 
@@ -97,7 +96,7 @@ def question_two_three():
     df = pd.read_csv(r'./bgp_update.csv')
     df['Closest Second'] = df['TIME'].apply(lambda x: x.split('.', 1)[0])
     df['Closest Minute'] = df['TIME'].apply(lambda x: x.split(':', 1)[0])
-    print(df.head(10))
+    # print(df.head(10))
 
     updates_per_second = df['Closest Second'].value_counts()
     updates_per_minute = df['Closest Minute'].value_counts()

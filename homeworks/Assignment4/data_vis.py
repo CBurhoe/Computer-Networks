@@ -29,46 +29,47 @@ def question_one_analysis():
 
     # BEGIN: Q1.2
     df_truncated_ip_addr = df.__deepcopy__()
-    df_truncated_ip_addr['Truncated Src IP addr'] = df_truncated_ip_addr['Src IP addr'].apply(lambda x: '.'.join(x.split('.', 2)[:2]))
-    prefix_counts = df_truncated_ip_addr['Truncated Src IP addr'].value_counts()
+    df_truncated_ip_addr['16b IP Mask'] = df_truncated_ip_addr['Src IP addr'].apply(lambda x: '.'.join(x.split('.', 2)[:2]))
+    prefix_counts = df_truncated_ip_addr['16b IP Mask'].value_counts()
+    prefix_counts.columns = ['16b IP Mask','# of FLows']
     print(prefix_counts[:10], '\n')
 
     # Find percentage of flows using top ten prefixes
     total = df.shape[0]
     top_ten_sum = prefix_counts[:10].sum()
     # Print result
-    print("Percentage of flows using top ten most common prefixes: ", top_ten_sum, ' / ', total, ' = ', top_ten_sum/total, '\n')
+    print("Percentage of flows using top ten most common prefixes: ", top_ten_sum, ' / ', total, ' = ', '{:.1%}'.format(top_ten_sum/total), '\n')
 
     # Aggregate by bytes
-    bytes_per_prefix = df_truncated_ip_addr.groupby('Truncated Src IP addr')['Bytes'].sum().sort_values(ascending=False)
+    bytes_per_prefix = df_truncated_ip_addr.groupby('16b IP Mask')['Bytes'].sum().sort_values(ascending=False)
     print(bytes_per_prefix[:10], '\n')
 
     # Find percentage of bytes sent in top 10 flows
     total_bytes = df['Bytes'].sum()
     top_ten_bytes_sum = bytes_per_prefix[:10].sum()
-    print("Percentage of bytes sent over the top ten most used prefixes: ", top_ten_bytes_sum, ' / ', total_bytes, ' = ', top_ten_bytes_sum/total_bytes, '\n')
+    print("Percentage of bytes sent over the top ten most used prefixes: ", top_ten_bytes_sum, ' / ', total_bytes, ' = ', '{:.1%}'.format(top_ten_bytes_sum/total_bytes), '\n')
 
 
     # Begin: Q1.3
 #     Choose port 23: Telnet
     num_telnet_src = df[(df['Src port'] == 23)].shape[0]
 
-    print("Percentage of flows using source port 23: ", num_telnet_src, " / ", total, " = ", num_telnet_src/total, '\n')
+    print("Percentage of flows using source port 23: ", num_telnet_src, " / ", total, " = ", '{:.1%}'.format(num_telnet_src/total), '\n')
 
     num_telnet_dst = df[(df['Dst port'] == 23)].shape[0]
-    print("Percentage of flows using destination port 23: ", num_telnet_dst, " / ", total, " = ", num_telnet_dst/total, '\n')
+    print("Percentage of flows using destination port 23: ", num_telnet_dst, " / ", total, " = ", '{:.1%}'.format(num_telnet_dst/total), '\n')
 
     # Begin: Q1.4
-    num_from_addr = df_truncated_ip_addr[(df_truncated_ip_addr['Truncated Src IP addr'] == '128.112')]['Bytes'].sum()
-    print("Percentage of bytes sent by 128.112.0.0/16 block to router: ", num_from_addr, " / ", total_bytes, " = ", num_from_addr/total_bytes)
+    num_from_addr = df_truncated_ip_addr[(df_truncated_ip_addr['16b IP Mask'] == '128.112')]['Bytes'].sum()
+    print("Percentage of bytes sent by 128.112.0.0/16 block to router: ", num_from_addr, " / ", total_bytes, " = ", '{:.1%}'.format(num_from_addr/total_bytes))
 
     df_truncated_ip_addr['Truncated Dst IP addr'] = df_truncated_ip_addr['Dst IP addr'].apply(lambda x: '.'.join(x.split('.', 2)[:2]))
 
     num_to_addr = df_truncated_ip_addr[(df_truncated_ip_addr['Truncated Dst IP addr'] == '128.112')]['Bytes'].sum()
-    print("Percentage of bytes sent by router to 128.112.0.0/16 block: ", num_to_addr, " / ", total_bytes, " = ", num_to_addr/total_bytes, '\n')
+    print("Percentage of bytes sent by router to 128.112.0.0/16 block: ", num_to_addr, " / ", total_bytes, " = ", '{:.1%}'.format(num_to_addr/total_bytes), '\n')
 
-    num_within_block = df_truncated_ip_addr[(df_truncated_ip_addr['Truncated Src IP addr'] == '128.112') & (df_truncated_ip_addr['Truncated Dst IP addr'] == '128.112')]['Bytes'].sum()
-    print("Percentage of bytes with source and destination address within 128.112.0.0/16 block: ", num_within_block, " / ", total_bytes, " = ", num_within_block/total_bytes, '\n')
+    num_within_block = df_truncated_ip_addr[(df_truncated_ip_addr['16b IP Mask'] == '128.112') & (df_truncated_ip_addr['Truncated Dst IP addr'] == '128.112')]['Bytes'].sum()
+    print("Percentage of bytes with source and destination address within 128.112.0.0/16 block: ", num_within_block, " / ", total_bytes, " = ", '{:.1%}'.format(num_within_block/total_bytes), '\n')
 
     # Q1.5 written
 
@@ -84,11 +85,11 @@ def question_two_one():
 
     # top_ten = df[df['ASPATH'] as_paths['Count'].head(10).sum()]
     top_ten = df['ASPATH'].apply(lambda x: any(as_name in x.split() for as_name in as_paths.head(10)['AS'])).sum() # Very inefficient, maybe fix later
-    print("The top ten most frequently occurring ASes are on ", top_ten, '/', total_paths, " = ", top_ten/total_paths, " paths.", '\n')
+    print("The top ten most frequently occurring ASes are on ", top_ten, '/', total_paths, " = ", '{:.1%}'.format(top_ten/total_paths), " paths.", '\n')
 
 def question_two_two():
     df = pd.read_csv(r'./bgp_route.csv')
-    df['Path Length'] = df['ASPATH'].str.split().str.len()
+    df['Path Length'] = df['ASPATH'].apply(lambda x: len(set(x.split())))
     sns.ecdfplot(data=df, x='Path Length')
     plt.show()
 

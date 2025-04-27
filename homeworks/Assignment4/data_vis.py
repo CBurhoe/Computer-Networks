@@ -114,20 +114,14 @@ def question_two_four():
     total_paths = df2.shape[0] + df1.shape[0]
 
     from_df1 = df1['FROM'].apply(lambda x: x.split(' ', 1)[1])
-    print(from_df1)
     from_df2 = df2['FROM'].apply(lambda x: x.split(' ', 1)[1])
-    print(from_df2)
 
     all_ases = pd.concat([from_df1, from_df2])
     as_counts = all_ases.value_counts().reset_index()
     as_counts.columns = ['AS', 'Count']
 
-    print(as_counts)
 
     as_counts['Percentage'] = [count / total_paths * 100 for count in as_counts['Count']]
-    print(as_counts)
-    print("AS1403 Made ", as_counts[as_counts['AS'] == 'AS1403']['Count'], " updates.\n")
-
     sns.ecdfplot(data=as_counts, x='Percentage', log_scale=True)
     plt.show()
 

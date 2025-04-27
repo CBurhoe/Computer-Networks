@@ -73,7 +73,6 @@ def question_one_analysis():
     # Q1.5 written
 
 def question_two_one():
-    # Begin Q2.1
     df = pd.read_csv(r'./bgp_route.csv')
 
     all_ases = df['ASPATH'].str.split().explode()
